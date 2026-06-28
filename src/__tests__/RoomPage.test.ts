@@ -26,6 +26,7 @@ const roomState: RoomState = {
   sharedCubeState: null,
   turnMode: false,
   currentTurn: null,
+  teamElapsed: 0,
   opponentMoves: [],
   gameResult: null,
   isMatching: false,
@@ -83,6 +84,43 @@ describe('RoomPage', () => {
     const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
 
     expect(page.element.textContent).toContain('比赛结束，胜者：Alice')
+  })
+
+  it('renders coop team timer, move counts and final duration', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false, moveCount: 5 }
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({
+        ...roomState,
+        gameStarted: true,
+        scramble: "R U R'",
+        teamElapsed: 1234,
+        players: [{ ...player, moveCount: 3 }, teammate],
+      })
+      listener({
+        ...roomState,
+        gameResult: {
+          winner: 'team',
+          players: [
+            { id: 'p1', name: 'Alice', moveCount: 3, solveTime: 2000, eloChange: 0 },
+            { id: 'p2', name: 'Bob', moveCount: 5, solveTime: 2000, eloChange: 0 },
+          ],
+          scramble: "R U R'",
+          duration: 2000,
+        },
+        players: [{ ...player, moveCount: 3 }, teammate],
+      })
+      return () => undefined
+    })
+
+    const page = createRoomPage({ mode: 'coop', cubeSize: 3, onBack: vi.fn() })
+
+    expect(page.element.textContent).toContain('协作完成，团队用时：2.000s')
+    expect(page.element.textContent).toContain('3 步')
+    expect(page.element.textContent).toContain('5 步')
   })
 
   it('sends create, join, match, ready and leave actions through the store', () => {

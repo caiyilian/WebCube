@@ -30,6 +30,11 @@ function statusText(status: RoomState['connectionStatus']): string {
   return text[status]
 }
 
+function formatDuration(ms: number | null | undefined): string {
+  if (ms == null) return '--'
+  return `${(ms / 1000).toFixed(3)}s`
+}
+
 export function createRoomPage(options: RoomPageOptions): RoomPage {
   const roomClient = new RoomClient()
   useRoomStore.attachClient(roomClient)
@@ -137,9 +142,13 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     const gameStateEl = element.querySelector('[data-game-state]')!
     if (state.gameResult) {
       const winner = state.gameResult.players.find((player) => player.id === state.gameResult?.winner)
-      gameStateEl.textContent = `比赛结束，胜者：${winner?.name ?? state.gameResult.winner ?? '无'}`
+      gameStateEl.textContent = options.mode === 'coop'
+        ? `协作完成，团队用时：${formatDuration(state.gameResult.duration)}`
+        : `比赛结束，胜者：${winner?.name ?? state.gameResult.winner ?? '无'}`
     } else if (state.gameStarted) {
-      gameStateEl.textContent = `比赛进行中，打乱：${state.scramble ?? ''}`
+      gameStateEl.textContent = options.mode === 'coop'
+        ? `协作进行中，团队计时：${formatDuration(state.teamElapsed)}，打乱：${state.scramble ?? ''}`
+        : `比赛进行中，打乱：${state.scramble ?? ''}`
     } else {
       gameStateEl.textContent = '等待玩家准备'
     }
@@ -148,7 +157,7 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     playersEl.innerHTML = state.players.map((player) => `
       <div class="room-player">
         <span>${player.name}${player.isHost ? '（房主）' : ''}${player.id === state.currentPlayerId ? '（我）' : ''}</span>
-        <strong>${player.isReady ? '已准备' : '未准备'}</strong>
+        <strong>${options.mode === 'coop' ? `${player.moveCount} 步` : (player.isReady ? '已准备' : '未准备')}</strong>
       </div>
     `).join('')
 

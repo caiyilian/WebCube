@@ -200,10 +200,12 @@ describe('useRoomStore', () => {
     useRoomStore.attachClient(client)
     useRoomStore.connect()
     socket.trigger('turn-mode-changed', true, 'p1')
+    socket.trigger('timer-sync', 2345)
     socket.trigger('turn-error', '只有房主可以切换轮流规则')
 
     expect(useRoomStore.getState().turnMode).toBe(true)
     expect(useRoomStore.getState().currentTurn).toBe('p1')
+    expect(useRoomStore.getState().teamElapsed).toBe(2345)
     expect(useRoomStore.getState().error).toBe('只有房主可以切换轮流规则')
   })
 })
