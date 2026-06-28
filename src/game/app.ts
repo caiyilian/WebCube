@@ -4,6 +4,7 @@ import { CubeRenderer } from './CubeRenderer'
 import { Interaction } from './Interaction'
 import { CubeState } from './CubeState'
 import { Solver } from './Solver'
+import { MoveHistory } from './MoveHistory'
 import { HUD } from '../components/HUD'
 import { generateScramble, scrambleToString } from './Scramble'
 import type { Move } from '../../shared/types'
@@ -62,6 +63,9 @@ export function createApp(): HTMLDivElement {
   // 创建求解器
   const solver = new Solver()
 
+  // 创建操作历史
+  const moveHistory = new MoveHistory()
+
   // 创建 HUD
   const hud = new HUD()
   container.appendChild(hud.getContainer())
@@ -72,6 +76,7 @@ export function createApp(): HTMLDivElement {
     // 将交互操作转换为 Move 类型
     const moveType = formatMove(move.axis, move.layer, move.direction)
     cubeState.applyMove(moveType)
+    moveHistory.record(moveType)
     hud.incrementMoveCount()
     console.log('Move executed:', moveType)
     console.log('Cube solved:', cubeState.isSolved())
@@ -92,9 +97,10 @@ export function createApp(): HTMLDivElement {
     const newCubeRenderer = new CubeRenderer()
     scene.add(newCubeRenderer.getGroup())
     
-    // 重置计时器和步数
+    // 重置计时器、步数和历史
     hud.resetTimer()
     hud.startTimer()
+    moveHistory.clear()
     
     console.log('Cube scrambled!')
   }
@@ -108,10 +114,29 @@ export function createApp(): HTMLDivElement {
     const newCubeRenderer = new CubeRenderer()
     scene.add(newCubeRenderer.getGroup())
     
-    // 重置计时器和步数
+    // 重置计时器、步数和历史
     hud.resetTimer()
+    moveHistory.clear()
     
     console.log('Cube reset!')
+  }
+
+  // 撤销功能
+  function undoMove(): void {
+    const inverseMove = moveHistory.undo()
+    if (inverseMove) {
+      cubeState.applyMove(inverseMove)
+      console.log('Undo:', inverseMove)
+    }
+  }
+
+  // 重做功能
+  function redoMove(): void {
+    const move = moveHistory.redo()
+    if (move) {
+      cubeState.applyMove(move)
+      console.log('Redo:', move)
+    }
   }
 
   // 自动求解功能
@@ -128,6 +153,7 @@ export function createApp(): HTMLDivElement {
       for (const moveStr of moves) {
         const move = moveStr as Move
         cubeState.applyMove(move)
+        moveHistory.record(move)
         hud.incrementMoveCount()
         console.log('Applied move:', move)
         
@@ -168,11 +194,44 @@ export function createApp(): HTMLDivElement {
   const solveButton = document.createElement('button')
   solveButton.textContent = '求解'
   solveButton.style.padding = '10px 20px'
+  solveButton.style.marginRight = '10px'
   solveButton.style.cursor = 'pointer'
   solveButton.onclick = solveCube
   buttonContainer.appendChild(solveButton)
 
+  const undoButton = document.createElement('button')
+  undoButton.textContent = '撤销'
+  undoButton.style.padding = '10px 20px'
+  undoButton.style.marginRight = '10px'
+  undoButton.style.cursor = 'pointer'
+  undoButton.onclick = undoMove
+  buttonContainer.appendChild(undoButton)
+
+  const redoButton = document.createElement('button')
+  redoButton.textContent = '重做'
+  redoButton.style.padding = '10px 20px'
+  redoButton.style.cursor = 'pointer'
+  redoButton.onclick = redoMove
+  buttonContainer.appendChild(redoButton)
+
   container.appendChild(buttonContainer)
+
+  // 添加键盘快捷键
+  window.addEventListener('keydown', (event) => {
+    if (event.ctrlKey || event.metaKey) {
+      if (event.key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redoMove()
+        } else {
+          undoMove()
+        }
+      } else if (event.key === 'y') {
+        event.preventDefault()
+        redoMove()
+      }
+    }
+  })
 
   // 动画循环
   function animate() {
