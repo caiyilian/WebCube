@@ -6,6 +6,7 @@ import { createHomePage } from './components/HomePage.js'
 import { createRoomPage } from './components/RoomPage'
 import { createCFOPTrainingPanel } from './components/CFOPTrainingPanel'
 import { createReplayPanel } from './components/ReplayPanel'
+import { createAIPanel } from './components/AIPanel'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
@@ -113,6 +114,11 @@ function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
     onReplayMove: (move) => canvas.animateMove(move),
   })
   root.appendChild(replayPanel.element)
+
+  if (mode === 'practice') {
+    const aiPanel = createAIPanel()
+    root.appendChild(aiPanel.element)
+  }
 
   // Set cube size in store
   useGameStore.setCubeSize(cubeSize)

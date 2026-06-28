@@ -700,6 +700,46 @@ html {
   padding: 0 8px;
 }
 
+.ai-panel {
+  position: fixed;
+  left: 18px;
+  top: 18px;
+  width: min(300px, calc(100vw - 36px));
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(10, 12, 18, 0.86);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.ai-panel h2 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.ai-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-difficulty {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 0 8px;
+}
+
+.ai-status {
+  color: #cfd6e6;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
   .room-page {
     align-items: flex-start;
