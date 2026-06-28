@@ -88,6 +88,10 @@ export class Canvas {
     this.cubeRenderer.setCubeSize(size)
   }
 
+  public resetCube(): void {
+    this.cubeRenderer.reset()
+  }
+
   private setupLights(): void {
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
