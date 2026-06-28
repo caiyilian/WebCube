@@ -172,10 +172,6 @@ export class Canvas {
   }
 
   private async onMove(move: Move): Promise<void> {
-    const store = useGameStore.getState()
-    store.applyMove(move)
-    
-    // Trigger rotation animation
     const axisMap: Record<string, 'x' | 'y' | 'z'> = {
       R: 'x', L: 'x',
       U: 'y', D: 'y',
@@ -186,11 +182,16 @@ export class Canvas {
       U: 1, D: -1,
       F: 1, B: -1,
     }
-    
-    const axis = axisMap[move.face]
-    const layer = layerMap[move.face]
+
+    const axis = move.axis ?? axisMap[move.face]
+    const layer = move.layer ?? layerMap[move.face]
     if (axis && layer !== undefined) {
-      await this.cubeRenderer.rotateLayer(axis, layer, move.direction)
+      if (layer !== 0) {
+        useGameStore.applyMove(move)
+      }
+
+      const renderDirection = (layer >= 0 ? -move.direction : move.direction) as 1 | -1
+      await this.cubeRenderer.rotateLayer(axis, layer, renderDirection)
     }
   }
 

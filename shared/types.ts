@@ -15,6 +15,7 @@ export type MoveDirection = 1 | -1
 export interface Move {
   face: MoveFace
   direction: MoveDirection
+  axis?: 'x' | 'y' | 'z'
   layer?: number
   timestamp?: number
 }
