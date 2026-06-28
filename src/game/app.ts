@@ -4,6 +4,7 @@ import { CubeRenderer } from './CubeRenderer'
 import { Interaction } from './Interaction'
 import { CubeState } from './CubeState'
 import { Solver } from './Solver'
+import { HUD } from '../components/HUD'
 import { generateScramble, scrambleToString } from './Scramble'
 import type { Move } from '../../shared/types'
 
@@ -61,12 +62,17 @@ export function createApp(): HTMLDivElement {
   // 创建求解器
   const solver = new Solver()
 
+  // 创建 HUD
+  const hud = new HUD()
+  container.appendChild(hud.getContainer())
+
   // 创建交互控制
   const interaction = new Interaction(cubeRenderer, scene, camera, renderer)
   interaction.onMove((move) => {
     // 将交互操作转换为 Move 类型
     const moveType = formatMove(move.axis, move.layer, move.direction)
     cubeState.applyMove(moveType)
+    hud.incrementMoveCount()
     console.log('Move executed:', moveType)
     console.log('Cube solved:', cubeState.isSolved())
   })
@@ -86,6 +92,10 @@ export function createApp(): HTMLDivElement {
     const newCubeRenderer = new CubeRenderer()
     scene.add(newCubeRenderer.getGroup())
     
+    // 重置计时器和步数
+    hud.resetTimer()
+    hud.startTimer()
+    
     console.log('Cube scrambled!')
   }
 
@@ -97,6 +107,9 @@ export function createApp(): HTMLDivElement {
     scene.remove(cubeRenderer.getGroup())
     const newCubeRenderer = new CubeRenderer()
     scene.add(newCubeRenderer.getGroup())
+    
+    // 重置计时器和步数
+    hud.resetTimer()
     
     console.log('Cube reset!')
   }
@@ -115,12 +128,14 @@ export function createApp(): HTMLDivElement {
       for (const moveStr of moves) {
         const move = moveStr as Move
         cubeState.applyMove(move)
+        hud.incrementMoveCount()
         console.log('Applied move:', move)
         
         // 等待 200ms
         await new Promise(resolve => setTimeout(resolve, 200))
       }
       
+      hud.stopTimer()
       console.log('Cube solved!')
     } catch (error) {
       console.error('Solve failed:', error)
