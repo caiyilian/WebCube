@@ -137,6 +137,14 @@ export class RoomClient {
     this.emit('move', move)
   }
 
+  sendCoopMove(move: Move): void {
+    this.emit('coop-move', move)
+  }
+
+  setTurnMode(enabled: boolean): void {
+    this.emit('set-turn-mode', enabled)
+  }
+
   findMatch(mode: GameMode): void {
     this.emit('find-match', mode)
   }

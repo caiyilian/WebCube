@@ -11,6 +11,8 @@ export interface RoomState {
   gameStarted: boolean
   scramble: string | null
   sharedCubeState: CubeState | null
+  turnMode: boolean
+  currentTurn: string | null
   opponentMoves: Move[]
   gameResult: GameResult | null
   isMatching: boolean
@@ -33,6 +35,8 @@ class RoomStore {
     gameStarted: false,
     scramble: null,
     sharedCubeState: null,
+    turnMode: false,
+    currentTurn: null,
     opponentMoves: [],
     gameResult: null,
     isMatching: false,
@@ -103,6 +107,15 @@ class RoomStore {
     client.on('sync-state', (cubeState) => {
       this.setState({ sharedCubeState: cubeState })
     })
+    client.on('turn-mode-changed', (turnMode, currentTurn) => {
+      this.setState({ turnMode, currentTurn, error: null })
+    })
+    client.on('turn-changed', (currentTurn) => {
+      this.setState({ currentTurn })
+    })
+    client.on('turn-error', (error) => {
+      this.setState({ error })
+    })
   }
 
   connect(): void {
@@ -129,6 +142,8 @@ class RoomStore {
       gameStarted: false,
       scramble: null,
       sharedCubeState: null,
+      turnMode: false,
+      currentTurn: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -148,6 +163,8 @@ class RoomStore {
       gameStarted: false,
       scramble: null,
       sharedCubeState: null,
+      turnMode: false,
+      currentTurn: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -175,6 +192,23 @@ class RoomStore {
 
   sendMove(move: Move): void {
     this.client?.sendMove(move)
+  }
+
+  sendCoopMove(move: Move): void {
+    if (!this.canSendCoopMove()) {
+      this.setState({ error: '轮流模式下还没轮到你' })
+      return
+    }
+    this.client?.sendCoopMove(move)
+  }
+
+  setTurnMode(enabled: boolean): void {
+    this.client?.setTurnMode(enabled)
+    this.setState({ turnMode: enabled, error: null })
+  }
+
+  canSendCoopMove(): boolean {
+    return !this.state.turnMode || !this.state.currentTurn || this.state.currentTurn === this.state.currentPlayerId
   }
 
   findMatch(mode: GameMode): void {
@@ -235,6 +269,8 @@ class RoomStore {
       gameStarted: false,
       scramble: null,
       sharedCubeState: null,
+      turnMode: false,
+      currentTurn: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -255,6 +291,8 @@ class RoomStore {
       gameStarted: false,
       scramble: null,
       sharedCubeState: room.sharedCubeState ?? null,
+      turnMode: room.turnMode ?? false,
+      currentTurn: room.currentTurn ?? null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,

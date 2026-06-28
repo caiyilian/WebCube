@@ -72,6 +72,8 @@ describe('RoomClient', () => {
     client.setReady(true)
     client.startGame()
     client.sendMove({ face: 'R', direction: 1 })
+    client.sendCoopMove({ face: 'U', direction: -1 })
+    client.setTurnMode(true)
     client.findMatch('1v1')
     client.cancelMatch()
     client.sendChatMessage('你好')
@@ -82,6 +84,8 @@ describe('RoomClient', () => {
       { event: 'set-ready', args: [true] },
       { event: 'start-game', args: [] },
       { event: 'move', args: [{ face: 'R', direction: 1 }] },
+      { event: 'coop-move', args: [{ face: 'U', direction: -1 }] },
+      { event: 'set-turn-mode', args: [true] },
       { event: 'find-match', args: ['1v1'] },
       { event: 'cancel-match', args: [] },
       { event: 'chat-message', args: ['你好'] },
