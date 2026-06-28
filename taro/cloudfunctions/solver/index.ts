@@ -15,6 +15,7 @@ interface SolveRequest {
 interface SolveResponse {
   solution: string
   moves: string[]
+  error?: string
 }
 
 // Simple solver using reverse scramble approach
@@ -44,7 +45,13 @@ export async function main(event: any, context: any): Promise<SolveResponse> {
   const { cubeState } = event as SolveRequest
 
   if (!cubeState) {
-    throw new Error('Missing cubeState')
+    return { solution: '', moves: [], error: 'Missing cubeState' }
+  }
+
+  const faces = ['U', 'D', 'F', 'B', 'L', 'R'] as const
+  const valid = faces.every((face) => Array.isArray(cubeState[face]) && cubeState[face].length > 0)
+  if (!valid) {
+    return { solution: '', moves: [], error: 'Invalid cubeState' }
   }
 
   return solveCube(cubeState)
