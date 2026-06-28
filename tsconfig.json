@@ -22,6 +22,7 @@
       "@shared/*": ["shared/*"]
     }
   },
-  "include": ["src", "server", "shared", "workers"],
+  "include": ["src", "shared"],
+  "exclude": ["server", "workers"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

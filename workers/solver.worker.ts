@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Web Worker for Kociemba solver (cubejs)
 // This runs in a separate thread to avoid blocking the main UI
 

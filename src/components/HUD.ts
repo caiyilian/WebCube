@@ -1,95 +1,88 @@
-import { Timer } from './Timer'
+export type GameMode = 'practice' | 'battle' | 'coop'
+
+export interface HUDCallbacks {
+  onScramble?: () => void
+  onReset?: () => void
+  onSolve?: () => void
+  onHint?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  onSettingsToggle?: () => void
+}
 
 export class HUD {
-  private container: HTMLDivElement
-  private timer: Timer
-  private timeDisplay: HTMLSpanElement
-  private moveCountDisplay: HTMLSpanElement
-  private moveCount: number = 0
+  public element: HTMLElement
+  public timerElement: HTMLElement
+  
+  private callbacks: HUDCallbacks = {}
+  private hintBtn: HTMLButtonElement | null = null
 
-  constructor() {
-    this.container = document.createElement('div')
-    this.container.style.position = 'absolute'
-    this.container.style.top = '20px'
-    this.container.style.right = '20px'
-    this.container.style.zIndex = '100'
-    this.container.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'
-    this.container.style.padding = '15px 20px'
-    this.container.style.borderRadius = '8px'
-    this.container.style.color = 'white'
-    this.container.style.fontFamily = 'monospace'
-    this.container.style.fontSize = '18px'
+  constructor(_mode: GameMode = 'practice') {
+    void _mode // Mode used for future multiplayer features
+    this.element = document.createElement('div')
+    this.element.className = 'hud-container'
+    this.element.innerHTML = `
+      <div class="hud-row">
+        <div class="hud-timer">0.000</div>
+        <div class="hud-moves">0 步</div>
+      </div>
+      <div class="hud-row hud-buttons">
+        <button class="hud-btn" data-action="scramble">打乱</button>
+        <button class="hud-btn" data-action="reset">重置</button>
+        <button class="hud-btn" data-action="solve">求解</button>
+        <button class="hud-btn" data-action="hint">提示</button>
+        <button class="hud-btn" data-action="undo">撤销</button>
+        <button class="hud-btn" data-action="redo">重做</button>
+        <button class="hud-btn" data-action="settings">设置</button>
+      </div>
+    `
 
-    // 计时器显示
-    const timerLabel = document.createElement('div')
-    timerLabel.textContent = '时间'
-    timerLabel.style.marginBottom = '5px'
-    timerLabel.style.fontSize = '12px'
-    timerLabel.style.color = '#aaa'
-    this.container.appendChild(timerLabel)
+    // Cache elements
+    this.timerElement = this.element.querySelector('.hud-timer')!
 
-    this.timeDisplay = document.createElement('span')
-    this.timeDisplay.textContent = '00:00.00'
-    this.timeDisplay.style.display = 'block'
-    this.timeDisplay.style.fontSize = '24px'
-    this.timeDisplay.style.fontWeight = 'bold'
-    this.container.appendChild(this.timeDisplay)
-
-    // 操作计数显示
-    const moveLabel = document.createElement('div')
-    moveLabel.textContent = '步数'
-    moveLabel.style.marginTop = '10px'
-    moveLabel.style.marginBottom = '5px'
-    moveLabel.style.fontSize = '12px'
-    moveLabel.style.color = '#aaa'
-    this.container.appendChild(moveLabel)
-
-    this.moveCountDisplay = document.createElement('span')
-    this.moveCountDisplay.textContent = '0'
-    this.moveCountDisplay.style.display = 'block'
-    this.moveCountDisplay.style.fontSize = '24px'
-    this.moveCountDisplay.style.fontWeight = 'bold'
-    this.container.appendChild(this.moveCountDisplay)
-
-    // 创建计时器
-    this.timer = new Timer()
-    this.timer.onUpdate((time) => {
-      this.timeDisplay.textContent = time
+    // Bind click events
+    this.element.querySelectorAll('.hud-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const action = (e.target as HTMLElement).dataset.action
+        this.handleAction(action!)
+      })
     })
   }
 
-  public getContainer(): HTMLDivElement {
-    return this.container
+  private handleAction(action: string): void {
+    switch (action) {
+      case 'scramble': this.callbacks.onScramble?.(); break
+      case 'reset': this.callbacks.onReset?.(); break
+      case 'solve': this.callbacks.onSolve?.(); break
+      case 'hint': this.callbacks.onHint?.(); break
+      case 'undo': this.callbacks.onUndo?.(); break
+      case 'redo': this.callbacks.onRedo?.(); break
+      case 'settings': this.callbacks.onSettingsToggle?.(); break
+    }
   }
 
-  public startTimer(): void {
-    this.timer.start()
+  public setMoveCount(count: number): void {
+    const movesEl = this.element.querySelector('.hud-moves')
+    if (movesEl) movesEl.textContent = `${count} 步`
   }
 
-  public stopTimer(): void {
-    this.timer.stop()
+  public setTimerDisplay(text: string): void {
+    this.timerElement.textContent = text
   }
 
-  public resetTimer(): void {
-    this.timer.reset()
-    this.moveCount = 0
-    this.updateMoveCount()
+  public setHintActive(active: boolean): void {
+    if (this.hintBtn) {
+      this.hintBtn.classList.toggle('active', active)
+    }
   }
 
-  public incrementMoveCount(): void {
-    this.moveCount++
-    this.updateMoveCount()
+  public hideHintButton(): void {
+    if (this.hintBtn) {
+      this.hintBtn.style.display = 'none'
+    }
   }
 
-  private updateMoveCount(): void {
-    this.moveCountDisplay.textContent = this.moveCount.toString()
-  }
-
-  public getTimer(): Timer {
-    return this.timer
-  }
-
-  public getMoveCount(): number {
-    return this.moveCount
+  public setCallbacks(callbacks: HUDCallbacks): void {
+    this.callbacks = callbacks
   }
 }

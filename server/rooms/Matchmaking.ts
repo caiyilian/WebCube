@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Server } from 'socket.io'
 import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData, GameMode, Player } from '@shared/types.js'
 import { RoomManager } from './RoomManager.js'

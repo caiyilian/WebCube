@@ -1,5 +1,6 @@
 import { Canvas } from './components/Canvas'
 import { HUD } from './components/HUD'
+import { Settings } from './components/Settings'
 import { useGameStore } from './stores/useGameStore'
 
 export function createApp() {
@@ -11,11 +12,15 @@ export function createApp() {
   root.appendChild(canvas.domElement)
 
   // Initialize HUD
-  const hud = new HUD()
+  const hud = new HUD('practice')
   root.appendChild(hud.element)
 
+  // Initialize Settings panel
+  const settings = new Settings()
+  root.appendChild(settings.element)
+
   // Connect HUD to store
-  connectHUD(hud)
+  connectHUD(hud, settings)
 
   // Start render loop
   canvas.animate()
@@ -24,22 +29,22 @@ export function createApp() {
   window.addEventListener('resize', () => canvas.onResize())
 
   // Expose for debugging
-  ;(window as any).__WEBCUBE__ = { canvas, hud, store: useGameStore }
+  ;(window as any).__WEBCUBE__ = { canvas, hud, settings, store: useGameStore }
 
   console.log('WebCube initialized')
 }
 
-function connectHUD(hud: HUD): void {
+function connectHUD(hud: HUD, settings: Settings): void {
   // Subscribe to store changes
   useGameStore.subscribe((state) => {
     // Update timer display
     if (state.isTimerRunning && state.timerStartTime) {
       const elapsed = state.timerElapsed + (Date.now() - state.timerStartTime)
       const seconds = (elapsed / 1000).toFixed(3)
-      hud.timerElement.textContent = seconds
+      hud.setTimerDisplay(seconds)
     } else if (!state.isTimerRunning) {
       const seconds = (state.timerElapsed / 1000).toFixed(3)
-      hud.timerElement.textContent = seconds
+      hud.setTimerDisplay(seconds)
     }
 
     // Update move count
@@ -47,36 +52,36 @@ function connectHUD(hud: HUD): void {
   })
 
   // Connect HUD callbacks
-  hud.onScramble = () => {
-    useGameStore.getState().scramble(20)
-  }
-
-  hud.onReset = () => {
-    useGameStore.getState().resetCube()
-    // Reset cube renderer
-    ;(window as any).__WEBCUBE__?.canvas?.cubeRenderer?.reset()
-  }
-
-  hud.onSolve = async () => {
-    // TODO: Implement auto-solve
-    console.log('Auto-solve requested')
-  }
-
-  hud.onHint = async () => {
-    const store = useGameStore.getState()
-    if (store.currentHint) {
-      store.clearHint()
-    } else {
-      // TODO: Get hint from HintEngine
-      console.log('Hint requested')
-    }
-  }
-
-  hud.onUndo = () => {
-    useGameStore.getState().undo()
-  }
-
-  hud.onRedo = () => {
-    useGameStore.getState().redo()
-  }
+  hud.setCallbacks({
+    onScramble: () => {
+      useGameStore.getState().scramble(20)
+    },
+    onReset: () => {
+      useGameStore.getState().resetCube()
+      ;(window as any).__WEBCUBE__?.canvas?.cubeRenderer?.reset()
+    },
+    onSolve: () => {
+      useGameStore.getState().autoSolve()
+    },
+    onHint: () => {
+      const store = useGameStore.getState()
+      if (store.currentHint) {
+        store.clearHint()
+        hud.setHintActive(false)
+      } else {
+        store.requestHint().then(() => {
+          hud.setHintActive(true)
+        })
+      }
+    },
+    onUndo: () => {
+      useGameStore.getState().undo()
+    },
+    onRedo: () => {
+      useGameStore.getState().redo()
+    },
+    onSettingsToggle: () => {
+      settings.toggle()
+    },
+  })
 }

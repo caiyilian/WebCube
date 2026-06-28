@@ -215,16 +215,16 @@ export class Interaction {
     // Only consider faces on the outer layer
     const outerFaces = faces.filter(f => Math.abs(f.pos) === 1)
     
-    let bestFace: typeof outerFaces[0] | null = null
+    let bestFace: { face: 'R' | 'L' | 'U' | 'D' | 'F' | 'B', normal: THREE.Vector3, pos: number } | null = null
     let bestDot = -Infinity
 
-    outerFaces.forEach(f => {
+    for (const f of outerFaces) {
       const dot = f.normal.dot(cameraDir)
       if (dot > bestDot) {
         bestDot = dot
         bestFace = f
       }
-    })
+    }
 
     return bestFace?.face ?? null
   }
