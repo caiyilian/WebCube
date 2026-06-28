@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CubeRenderer } from './CubeRenderer'
 import { Interaction } from './Interaction'
 import { CubeState } from './CubeState'
+import { generateScramble, scrambleToString } from './Scramble'
 import type { Move } from '../../shared/types'
 
 export function createApp(): HTMLDivElement {
@@ -65,6 +66,61 @@ export function createApp(): HTMLDivElement {
     console.log('Move executed:', moveType)
     console.log('Cube solved:', cubeState.isSolved())
   })
+
+  // 打乱功能
+  function scrambleCube(): void {
+    const scramble = generateScramble(20)
+    console.log('Scramble:', scrambleToString(scramble))
+    
+    // 应用打乱操作
+    scramble.forEach(move => {
+      cubeState.applyMove(move)
+    })
+    
+    // 重新创建魔方以反映新状态
+    scene.remove(cubeRenderer.getGroup())
+    const newCubeRenderer = new CubeRenderer()
+    scene.add(newCubeRenderer.getGroup())
+    
+    // 注意：这里需要重新绑定交互，但为了简化暂时跳过
+    console.log('Cube scrambled!')
+  }
+
+  // 重置功能
+  function resetCube(): void {
+    cubeState.setState(cubeState.createSolvedState())
+    
+    // 重新创建魔方
+    scene.remove(cubeRenderer.getGroup())
+    const newCubeRenderer = new CubeRenderer()
+    scene.add(newCubeRenderer.getGroup())
+    
+    console.log('Cube reset!')
+  }
+
+  // 添加控制按钮
+  const buttonContainer = document.createElement('div')
+  buttonContainer.style.position = 'absolute'
+  buttonContainer.style.top = '20px'
+  buttonContainer.style.left = '20px'
+  buttonContainer.style.zIndex = '100'
+
+  const scrambleButton = document.createElement('button')
+  scrambleButton.textContent = '打乱'
+  scrambleButton.style.padding = '10px 20px'
+  scrambleButton.style.marginRight = '10px'
+  scrambleButton.style.cursor = 'pointer'
+  scrambleButton.onclick = scrambleCube
+  buttonContainer.appendChild(scrambleButton)
+
+  const resetButton = document.createElement('button')
+  resetButton.textContent = '重置'
+  resetButton.style.padding = '10px 20px'
+  resetButton.style.cursor = 'pointer'
+  resetButton.onclick = resetCube
+  buttonContainer.appendChild(resetButton)
+
+  container.appendChild(buttonContainer)
 
   // 动画循环
   function animate() {

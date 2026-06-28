@@ -8,7 +8,7 @@ export class CubeState {
   }
 
   // 创建已还原状态
-  private createSolvedState(): CubeStateType {
+  public createSolvedState(): CubeStateType {
     return {
       U: Array(9).fill('white'),
       D: Array(9).fill('yellow'),
