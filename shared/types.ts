@@ -86,7 +86,7 @@ export interface ServerToClientEvents {
   'room-list': (rooms: Room[]) => void
 
   // Game events
-  'game-start': (data: { scramble: string; mode: GameMode; players: Player[] }) => void
+  'game-start': (data: { scramble: string; mode: GameMode; players: Player[]; cubeState?: CubeState }) => void
   'game-end': (result: GameResult) => void
   'opponent-move': (move: Move) => void
   'cube-update': (cubeState: CubeState) => void

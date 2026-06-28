@@ -189,8 +189,10 @@ io.on('connection', (socket) => {
         return
       }
       if (roomManager.validateMove(roomId, move)) {
-        io.to(roomId).emit('cube-update', move)
-        roomManager.applyMove(roomId, playerId, move)
+        const cubeState = roomManager.applyMove(roomId, playerId, move)
+        if (cubeState) {
+          io.to(roomId).emit('cube-update', cubeState)
+        }
         if (room?.turnMode) {
           roomManager.nextTurn(roomId)
           io.to(roomId).emit('turn-changed', room.currentTurn)

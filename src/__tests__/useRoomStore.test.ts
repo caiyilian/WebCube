@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { RoomClient, type RoomSocket } from '../net/RoomClient'
 import { useRoomStore } from '../stores/useRoomStore'
-import type { Player, Room } from '../../shared/types'
+import type { CubeState, Player, Room } from '../../shared/types'
 
 class FakeSocket {
   public connected = false
@@ -53,6 +53,15 @@ const player: Player = {
   hintsUsed: 0,
 }
 
+const sharedCubeState: CubeState = {
+  U: Array(9).fill('white'),
+  D: Array(9).fill('yellow'),
+  F: Array(9).fill('green'),
+  B: Array(9).fill('blue'),
+  L: Array(9).fill('orange'),
+  R: Array(9).fill('red'),
+}
+
 const room: Room = {
   id: 'ABC123',
   mode: '1v1',
@@ -90,13 +99,30 @@ describe('useRoomStore', () => {
     expect(useRoomStore.getState().players).toEqual([player])
   })
 
+  it('stores shared cube state from joined rooms and sync events', () => {
+    const socket = new FakeSocket()
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+    const updatedState: CubeState = { ...sharedCubeState, F: Array(9).fill('red') }
+
+    useRoomStore.attachClient(client)
+    useRoomStore.connect()
+    socket.trigger('room-joined', { ...room, mode: 'coop', sharedCubeState })
+    expect(useRoomStore.getState().sharedCubeState).toEqual(sharedCubeState)
+
+    socket.trigger('cube-update', updatedState)
+    expect(useRoomStore.getState().sharedCubeState).toEqual(updatedState)
+
+    socket.trigger('sync-state', sharedCubeState)
+    expect(useRoomStore.getState().sharedCubeState).toEqual(sharedCubeState)
+  })
+
   it('tracks 1v1 game events', () => {
     const socket = new FakeSocket()
     const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
 
     useRoomStore.attachClient(client)
     useRoomStore.connect()
-    socket.trigger('game-start', { scramble: "R U R'", mode: '1v1', players: [player] })
+    socket.trigger('game-start', { scramble: "R U R'", mode: '1v1', players: [player], cubeState: sharedCubeState })
     socket.trigger('opponent-move', { face: 'R', direction: 1 })
     socket.trigger('game-end', {
       winner: 'p1',
@@ -106,6 +132,7 @@ describe('useRoomStore', () => {
     })
 
     expect(useRoomStore.getState().scramble).toBe("R U R'")
+    expect(useRoomStore.getState().sharedCubeState).toEqual(sharedCubeState)
     expect(useRoomStore.getState().opponentMoves).toEqual([{ face: 'R', direction: 1 }])
     expect(useRoomStore.getState().gameStarted).toBe(false)
     expect(useRoomStore.getState().gameResult?.winner).toBe('p1')

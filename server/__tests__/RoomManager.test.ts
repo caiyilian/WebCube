@@ -3,11 +3,17 @@ import { RoomManager } from '../rooms/RoomManager.js'
 
 describe('RoomManager', () => {
   let roomManager: RoomManager
+  let emitted: Array<{ roomId: string; event: string; payload: unknown }>
 
   beforeEach(() => {
+    emitted = []
     // Create a mock io object
     const mockIo = {
-      to: () => ({ emit: () => {} }),
+      to: (roomId: string) => ({
+        emit: (event: string, payload: unknown) => {
+          emitted.push({ roomId, event, payload })
+        },
+      }),
     }
     roomManager = new RoomManager(mockIo as any)
   })
@@ -106,6 +112,47 @@ describe('RoomManager', () => {
       })
       const rooms = roomManager.getPublicRooms()
       expect(rooms.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('coop shared state', () => {
+    it('starts coop rooms with a shared cube state in game-start payload', () => {
+      const roomId = roomManager.createRoom({
+        mode: 'coop',
+        host: 'player1',
+        settings: { cubeSize: 3 },
+      })
+      roomManager.joinRoom(roomId, {
+        id: 'player1',
+        name: 'Player 1',
+        color: '#ff0000',
+        isHost: true,
+        isReady: false,
+        moveCount: 0,
+        solveTime: null,
+        hintsUsed: 0,
+      })
+      roomManager.joinRoom(roomId, {
+        id: 'player2',
+        name: 'Player 2',
+        color: '#00ff00',
+        isHost: false,
+        isReady: false,
+        moveCount: 0,
+        solveTime: null,
+        hintsUsed: 0,
+      })
+
+      const result = roomManager.startRoom(roomId, 'player1')
+      const room = roomManager.getRoom(roomId)
+      const gameStart = emitted.find((item) => item.event === 'game-start')
+
+      expect(result.ok).toBe(true)
+      expect(room?.sharedCubeState).toBeTruthy()
+      expect(gameStart?.payload).toMatchObject({
+        mode: 'coop',
+        cubeState: room?.sharedCubeState,
+      })
     })
   })
 })

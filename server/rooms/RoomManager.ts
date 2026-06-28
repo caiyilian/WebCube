@@ -206,6 +206,7 @@ export class RoomManager {
       scramble: room.scramble,
       mode: room.mode,
       players: room.players,
+      cubeState: room.sharedCubeState,
     })
 
     // Start team timer broadcast

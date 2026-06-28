@@ -23,6 +23,7 @@ const roomState: RoomState = {
   players: [player],
   gameStarted: false,
   scramble: null,
+  sharedCubeState: null,
   opponentMoves: [],
   gameResult: null,
   isMatching: false,

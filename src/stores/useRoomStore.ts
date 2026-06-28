@@ -1,5 +1,5 @@
 import { RoomClient, type ConnectionStatus, type LeaderboardRow, type RoomPlayerStats } from '../net/RoomClient'
-import type { ChatMessage, GameMode, GameResult, Move, Player, Room, RoomSettings } from '../../shared/types'
+import type { ChatMessage, CubeState, GameMode, GameResult, Move, Player, Room, RoomSettings } from '../../shared/types'
 
 export interface RoomState {
   connectionStatus: ConnectionStatus
@@ -10,6 +10,7 @@ export interface RoomState {
   players: Player[]
   gameStarted: boolean
   scramble: string | null
+  sharedCubeState: CubeState | null
   opponentMoves: Move[]
   gameResult: GameResult | null
   isMatching: boolean
@@ -31,6 +32,7 @@ class RoomStore {
     players: [],
     gameStarted: false,
     scramble: null,
+    sharedCubeState: null,
     opponentMoves: [],
     gameResult: null,
     isMatching: false,
@@ -75,8 +77,8 @@ class RoomStore {
       })
     })
     client.on('room-error', (error) => this.setState({ error, connectionStatus: 'error' }))
-    client.on('game-start', ({ scramble, players }) => {
-      this.setState({ gameStarted: true, scramble, players, gameResult: null, error: null })
+    client.on('game-start', ({ scramble, players, cubeState }) => {
+      this.setState({ gameStarted: true, scramble, sharedCubeState: cubeState ?? null, players, gameResult: null, error: null })
     })
     client.on('opponent-move', (move) => {
       this.setState({ opponentMoves: [...this.state.opponentMoves, move] })
@@ -94,6 +96,12 @@ class RoomStore {
     })
     client.on('chat-message', (message) => {
       this.setState({ chatMessages: [...this.state.chatMessages, message] })
+    })
+    client.on('cube-update', (cubeState) => {
+      this.setState({ sharedCubeState: cubeState })
+    })
+    client.on('sync-state', (cubeState) => {
+      this.setState({ sharedCubeState: cubeState })
     })
   }
 
@@ -120,6 +128,7 @@ class RoomStore {
       players: [],
       gameStarted: false,
       scramble: null,
+      sharedCubeState: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -138,6 +147,7 @@ class RoomStore {
       players: [],
       gameStarted: false,
       scramble: null,
+      sharedCubeState: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -224,6 +234,7 @@ class RoomStore {
       players: [],
       gameStarted: false,
       scramble: null,
+      sharedCubeState: null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -243,6 +254,7 @@ class RoomStore {
       error: null,
       gameStarted: false,
       scramble: null,
+      sharedCubeState: room.sharedCubeState ?? null,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
