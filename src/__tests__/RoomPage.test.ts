@@ -24,6 +24,8 @@ const roomState: RoomState = {
   scramble: null,
   opponentMoves: [],
   gameResult: null,
+  isMatching: false,
+  matchStartedAt: null,
 }
 
 describe('RoomPage', () => {
@@ -73,7 +75,7 @@ describe('RoomPage', () => {
     expect(page.element.textContent).toContain('比赛结束，胜者：Alice')
   })
 
-  it('sends create, join, ready and leave actions through the store', () => {
+  it('sends create, join, match, ready and leave actions through the store', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
@@ -86,9 +88,13 @@ describe('RoomPage', () => {
     const joinRoom = vi.spyOn(useRoomStore, 'joinRoom').mockImplementation(() => undefined)
     const setReady = vi.spyOn(useRoomStore, 'setReady').mockImplementation(() => undefined)
     const leaveRoom = vi.spyOn(useRoomStore, 'leaveRoom').mockImplementation(() => undefined)
+    const findMatch = vi.spyOn(useRoomStore, 'findMatch').mockImplementation(() => undefined)
+    const cancelMatch = vi.spyOn(useRoomStore, 'cancelMatch').mockImplementation(() => undefined)
 
     const page = createRoomPage({ mode: 'coop', cubeSize: 4, onBack: vi.fn() })
     ;(page.element.querySelector('[data-action="create"]') as HTMLButtonElement).click()
+    ;(page.element.querySelector('[data-action="match"]') as HTMLButtonElement).click()
+    ;(page.element.querySelector('[data-action="cancel-match"]') as HTMLButtonElement).click()
     const input = page.element.querySelector('.room-code-input') as HTMLInputElement
     input.value = 'xyz789'
     ;(page.element.querySelector('.room-join-form') as HTMLFormElement).dispatchEvent(
@@ -98,6 +104,8 @@ describe('RoomPage', () => {
     ;(page.element.querySelector('[data-action="leave"]') as HTMLButtonElement).click()
 
     expect(createRoom).toHaveBeenCalledWith('coop', { cubeSize: 4 })
+    expect(findMatch).toHaveBeenCalledWith('coop')
+    expect(cancelMatch).toHaveBeenCalled()
     expect(joinRoom).toHaveBeenCalledWith('xyz789')
     expect(setReady).toHaveBeenCalledWith(true)
     expect(leaveRoom).toHaveBeenCalled()
@@ -115,5 +123,19 @@ describe('RoomPage', () => {
     const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
 
     expect(page.element.textContent).toContain('房间不存在')
+  })
+
+  it('shows matching state and cancel action', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({ ...roomState, roomId: null, players: [], isMatching: true })
+      return () => undefined
+    })
+
+    const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
+
+    expect(page.element.textContent).toContain('取消匹配（匹配中...）')
   })
 })

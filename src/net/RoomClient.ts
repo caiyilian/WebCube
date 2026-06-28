@@ -113,6 +113,14 @@ export class RoomClient {
     this.emit('move', move)
   }
 
+  findMatch(mode: GameMode): void {
+    this.emit('find-match', mode)
+  }
+
+  cancelMatch(): void {
+    this.emit('cancel-match')
+  }
+
   private setStatus(status: ConnectionStatus, error: string | null): void {
     this.status = status
     this.error = error

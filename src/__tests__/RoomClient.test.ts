@@ -66,12 +66,16 @@ describe('RoomClient', () => {
     client.joinRoom('ABC123')
     client.setReady(true)
     client.sendMove({ face: 'R', direction: 1 })
+    client.findMatch('1v1')
+    client.cancelMatch()
 
     expect(socket.emitted).toEqual([
       { event: 'create-room', args: [{ mode: '1v1', settings: undefined }] },
       { event: 'join-room', args: ['ABC123'] },
       { event: 'set-ready', args: [true] },
       { event: 'move', args: [{ face: 'R', direction: 1 }] },
+      { event: 'find-match', args: ['1v1'] },
+      { event: 'cancel-match', args: [] },
     ])
   })
 
