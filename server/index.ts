@@ -146,6 +146,15 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('set-free-mode', (enabled: boolean) => {
+    const roomId = socket.data.roomId
+    if (roomId) {
+      // Free mode is turn mode off
+      roomManager.setTurnMode(roomId, !enabled)
+      io.to(roomId).emit('free-mode-changed', enabled)
+    }
+  })
+
   socket.on('coop-move', (move: Move) => {
     const roomId = socket.data.roomId
     if (roomId) {
