@@ -54,18 +54,18 @@ function connectHUD(hud: HUD, settings: Settings): void {
   // Connect HUD callbacks
   hud.setCallbacks({
     onScramble: () => {
-      useGameStore.getState().scramble(20)
+      useGameStore.scramble(20)
     },
     onReset: () => {
-      useGameStore.getState().resetCube()
+      useGameStore.resetCube()
       ;(window as any).__WEBCUBE__?.canvas?.cubeRenderer?.reset()
     },
     onSolve: () => {
-      useGameStore.getState().autoSolve()
+      useGameStore.autoSolve()
     },
     onHint: () => {
-      const store = useGameStore.getState()
-      if (store.currentHint) {
+      const store = useGameStore
+      if (store.getState().currentHint) {
         store.clearHint()
         hud.setHintActive(false)
       } else {
@@ -75,10 +75,10 @@ function connectHUD(hud: HUD, settings: Settings): void {
       }
     },
     onUndo: () => {
-      useGameStore.getState().undo()
+      useGameStore.undo()
     },
     onRedo: () => {
-      useGameStore.getState().redo()
+      useGameStore.redo()
     },
     onSettingsToggle: () => {
       settings.toggle()
