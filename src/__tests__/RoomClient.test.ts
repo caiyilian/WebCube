@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RoomClient, type RoomSocket } from '../net/RoomClient'
 
 class FakeSocket {
@@ -40,6 +40,10 @@ class FakeSocket {
 }
 
 describe('RoomClient', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('tracks connection lifecycle', () => {
     const socket = new FakeSocket()
     const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
@@ -68,6 +72,7 @@ describe('RoomClient', () => {
     client.sendMove({ face: 'R', direction: 1 })
     client.findMatch('1v1')
     client.cancelMatch()
+    client.sendChatMessage('你好')
 
     expect(socket.emitted).toEqual([
       { event: 'create-room', args: [{ mode: '1v1', settings: undefined }] },
@@ -76,7 +81,24 @@ describe('RoomClient', () => {
       { event: 'move', args: [{ face: 'R', direction: 1 }] },
       { event: 'find-match', args: ['1v1'] },
       { event: 'cancel-match', args: [] },
+      { event: 'chat-message', args: ['你好'] },
     ])
+  })
+
+  it('loads leaderboard and player stats over HTTP', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ leaderboard: [{ id: 'p1', elo: 1216, gamesPlayed: 1, gamesWon: 1 }] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ elo: 1216, gamesPlayed: 1, gamesWon: 1, bestTime: 1000, totalTime: 1000, history: [] }),
+      } as Response)
+    const client = new RoomClient('http://localhost:3000')
+
+    await expect(client.fetchLeaderboard()).resolves.toEqual([{ id: 'p1', elo: 1216, gamesPlayed: 1, gamesWon: 1 }])
+    await expect(client.fetchPlayerStats('p1')).resolves.toMatchObject({ elo: 1216, gamesPlayed: 1 })
   })
 
   it('surfaces connection and room errors', () => {

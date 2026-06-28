@@ -553,6 +553,68 @@ html {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.room-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.room-panel {
+  min-width: 0;
+}
+
+.room-panel h2 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.room-chat-list,
+.room-leaderboard,
+.room-stats {
+  display: grid;
+  gap: 6px;
+  min-height: 80px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.room-chat-message,
+.room-rank-row,
+.room-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.room-chat-message {
+  justify-content: flex-start;
+}
+
+.room-chat-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.room-chat-input {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.room-empty {
+  color: #888;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 768px) {
   .room-page {
     align-items: flex-start;
@@ -562,8 +624,13 @@ html {
 
   .room-header,
   .room-footer-actions,
-  .room-join-form {
+  .room-join-form,
+  .room-info-grid {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .room-info-grid {
+    display: flex;
   }
 }
