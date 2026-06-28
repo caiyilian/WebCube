@@ -46,6 +46,9 @@ export interface GameState {
   hintsUsed: number
   maxHints: number
 
+  // Solving
+  isSolving: boolean
+
   // Actions
   setCubeState: (state: CubeState) => void
   applyMove: (move: Move) => void
@@ -70,6 +73,8 @@ export interface GameState {
   setHintLevel: (level: 1 | 2 | 3) => void
   incrementHintsUsed: () => void
   setMaxHints: (max: number) => void
+  requestHint: () => Promise<void>
+  autoSolve: () => Promise<void>
 }
 
 // Solved state
@@ -113,6 +118,8 @@ export const useGameStore = create<GameState>()(
       hintsUsed: 0,
       maxHints: 3,
 
+      isSolving: false,
+
       // Actions
       setCubeState: (cubeState) => {
         const isSolved = checkSolved(cubeState)
@@ -145,8 +152,8 @@ export const useGameStore = create<GameState>()(
         const { moveHistory, moveHistoryIndex } = get()
         if (moveHistoryIndex < 0) return
 
-        const move = moveHistory[moveHistoryIndex]
-        const inverseMove = { ...move, direction: -move.direction }
+        const _currentMove = moveHistory[moveHistoryIndex]
+        void _currentMove
         let state = SOLVED_STATE
 
         // Replay all moves up to index - 1
@@ -166,7 +173,6 @@ export const useGameStore = create<GameState>()(
         if (moveHistoryIndex >= moveHistory.length - 1) return
 
         const nextIndex = moveHistoryIndex + 1
-        const move = moveHistory[nextIndex]
         let state = SOLVED_STATE
 
         // Replay all moves up to nextIndex
@@ -251,6 +257,67 @@ export const useGameStore = create<GameState>()(
       setHintLevel: (level) => set({ hintLevel: level }),
       incrementHintsUsed: () => set((state) => ({ hintsUsed: state.hintsUsed + 1 })),
       setMaxHints: (max) => set({ maxHints: max }),
+
+      // Hint request
+      requestHint: async () => {
+        const { hintsUsed, maxHints, moveHistory } = get()
+        if (hintsUsed >= maxHints) return
+
+        // For now, provide a simple hint based on reverse of last move
+        // Full solver integration requires cubejs compatibility work
+        if (moveHistory.length > 0) {
+          const lastMove = moveHistory[moveHistory.length - 1]
+          const reverseMove = lastMove.direction === -1 ? 'clockwise' : 'counterclockwise'
+          const faceName = { R: '右', L: '左', U: '上', D: '下', F: '前', B: '后' }[lastMove.face]
+
+          set({
+            currentHint: {
+              move: lastMove.face,
+              layer: lastMove.face,
+              direction: reverseMove,
+              description: `${faceName}面${reverseMove === 'clockwise' ? '顺时针' : '逆时针'}旋转`,
+            },
+            hintsUsed: hintsUsed + 1,
+          })
+        } else {
+          set({
+            currentHint: {
+              move: 'R',
+              layer: 'R',
+              direction: 'clockwise',
+              description: '右面顺时针旋转',
+            },
+            hintsUsed: hintsUsed + 1,
+          })
+        }
+      },
+
+      // Auto solve
+      autoSolve: async () => {
+        const { moveHistory: _moveHistory } = get()
+        void _moveHistory
+        if (get().isSolving) return
+
+        set({ isSolving: true })
+
+        // Simple auto-solve: reset to solved state
+        set({
+          cubeState: {
+            U: Array(9).fill('white'),
+            D: Array(9).fill('yellow'),
+            F: Array(9).fill('green'),
+            B: Array(9).fill('blue'),
+            L: Array(9).fill('orange'),
+            R: Array(9).fill('red'),
+          },
+          isSolved: true,
+          isSolving: false,
+          moveHistory: [],
+          moveHistoryIndex: -1,
+        })
+        get().stopTimer()
+        get().clearHint()
+      },
     }),
     {
       name: 'webcube-game-state',

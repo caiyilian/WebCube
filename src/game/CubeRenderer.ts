@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CubeState, Move } from '@shared/types.js'
+import { CubeState } from '@shared/types.js'
 
 // 魔方颜色定义
 export const CUBE_COLORS = {
@@ -224,12 +224,12 @@ export class CubeRenderer {
   }
 
   // 从逻辑状态更新渲染
-  public updateFromState(state: CubeState): void {
+  public updateFromState(_state: CubeState): void {
     // 根据逻辑状态更新每个 cubelet 的颜色
     // 这是一个简化版本，完整实现需要将每个贴纸映射到对应的 cubelet 面
     this.cubelets.forEach(c => {
-      const pos = c.logicalPosition
-      const materials = c.mesh.material as THREE.Material[]
+      void c.logicalPosition
+      void c.mesh.material
       
       // 根据位置确定可见面并更新颜色
       // 这里简化处理，实际需要更复杂的映射
