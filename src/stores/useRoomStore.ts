@@ -1,5 +1,5 @@
-import { RoomClient, type ConnectionStatus } from '../net/RoomClient'
-import type { GameMode, GameResult, Move, Player, Room, RoomSettings } from '../../shared/types'
+import { RoomClient, type ConnectionStatus, type LeaderboardRow, type RoomPlayerStats } from '../net/RoomClient'
+import type { ChatMessage, GameMode, GameResult, Move, Player, Room, RoomSettings } from '../../shared/types'
 
 export interface RoomState {
   connectionStatus: ConnectionStatus
@@ -13,6 +13,9 @@ export interface RoomState {
   gameResult: GameResult | null
   isMatching: boolean
   matchStartedAt: number | null
+  chatMessages: ChatMessage[]
+  leaderboard: LeaderboardRow[]
+  playerStats: RoomPlayerStats | null
 }
 
 type Listener = (state: RoomState) => void
@@ -30,6 +33,9 @@ class RoomStore {
     gameResult: null,
     isMatching: false,
     matchStartedAt: null,
+    chatMessages: [],
+    leaderboard: [],
+    playerStats: null,
   }
   private listeners = new Set<Listener>()
   private client: RoomClient | null = null
@@ -84,6 +90,9 @@ class RoomStore {
       this.clearMatchTimeout()
       this.setState({ isMatching: false, matchStartedAt: null, error: '已取消匹配' })
     })
+    client.on('chat-message', (message) => {
+      this.setState({ chatMessages: [...this.state.chatMessages, message] })
+    })
   }
 
   connect(): void {
@@ -112,6 +121,8 @@ class RoomStore {
       gameResult: null,
       isMatching: false,
       matchStartedAt: null,
+      chatMessages: [],
+      playerStats: null,
     })
   }
 
@@ -127,6 +138,8 @@ class RoomStore {
       gameResult: null,
       isMatching: false,
       matchStartedAt: null,
+      chatMessages: [],
+      playerStats: null,
     })
   }
 
@@ -163,6 +176,32 @@ class RoomStore {
     this.setState({ isMatching: false, matchStartedAt: null, error: '已取消匹配' })
   }
 
+  sendChatMessage(message: string): void {
+    const trimmed = message.trim()
+    if (!trimmed) return
+    this.client?.sendChatMessage(trimmed)
+  }
+
+  async loadLeaderboard(): Promise<void> {
+    if (!this.client) return
+    try {
+      const leaderboard = await this.client.fetchLeaderboard()
+      this.setState({ leaderboard, error: null })
+    } catch (error) {
+      this.setState({ error: error instanceof Error ? error.message : '排行榜加载失败' })
+    }
+  }
+
+  async loadPlayerStats(playerId: string): Promise<void> {
+    if (!this.client) return
+    try {
+      const playerStats = await this.client.fetchPlayerStats(playerId)
+      this.setState({ playerStats, error: null })
+    } catch (error) {
+      this.setState({ error: error instanceof Error ? error.message : '个人统计加载失败' })
+    }
+  }
+
   reset(): void {
     this.clearMatchTimeout()
     this.unsubscribeClient?.()
@@ -180,6 +219,9 @@ class RoomStore {
       gameResult: null,
       isMatching: false,
       matchStartedAt: null,
+      chatMessages: [],
+      leaderboard: [],
+      playerStats: null,
     })
   }
 
@@ -195,6 +237,8 @@ class RoomStore {
       gameResult: null,
       isMatching: false,
       matchStartedAt: null,
+      chatMessages: [],
+      playerStats: null,
     })
   }
 

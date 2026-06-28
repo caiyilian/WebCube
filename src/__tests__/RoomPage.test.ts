@@ -26,6 +26,9 @@ const roomState: RoomState = {
   gameResult: null,
   isMatching: false,
   matchStartedAt: null,
+  chatMessages: [],
+  leaderboard: [],
+  playerStats: null,
 }
 
 describe('RoomPage', () => {
@@ -37,6 +40,7 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
       listener(roomState)
       return () => undefined
@@ -56,6 +60,7 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
       listener({ ...roomState, gameStarted: true, scramble: "R U R'" })
       listener({
@@ -79,6 +84,7 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
       listener(roomState)
       return () => undefined
@@ -115,6 +121,7 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
       listener({ ...roomState, roomId: null, players: [], error: '房间不存在' })
       return () => undefined
@@ -129,6 +136,7 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
       listener({ ...roomState, roomId: null, players: [], isMatching: true })
       return () => undefined
@@ -137,5 +145,42 @@ describe('RoomPage', () => {
     const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
 
     expect(page.element.textContent).toContain('取消匹配（匹配中...）')
+  })
+
+  it('renders chat, leaderboard, stats and sends chat messages', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({
+        ...roomState,
+        chatMessages: [{
+          id: 'm1',
+          playerId: 'p1',
+          playerName: 'Alice',
+          playerColor: '#fff',
+          message: '你好',
+          timestamp: 1,
+        }],
+        leaderboard: [{ id: 'p1', elo: 1216, gamesPlayed: 1, gamesWon: 1 }],
+        playerStats: { elo: 1216, gamesPlayed: 1, gamesWon: 1, bestTime: 1000, totalTime: 1000, history: [] },
+      })
+      return () => undefined
+    })
+    const sendChatMessage = vi.spyOn(useRoomStore, 'sendChatMessage').mockImplementation(() => undefined)
+
+    const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
+    const input = page.element.querySelector('.room-chat-input') as HTMLInputElement
+    input.value = '开局！'
+    ;(page.element.querySelector('.room-chat-form') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true })
+    )
+
+    expect(page.element.textContent).toContain('你好')
+    expect(page.element.textContent).toContain('1216')
+    expect(page.element.textContent).toContain('100%')
+    expect(sendChatMessage).toHaveBeenCalledWith('开局！')
+    expect(input.value).toBe('')
   })
 })

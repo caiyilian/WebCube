@@ -66,6 +66,24 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
         </div>
         <div class="room-game-state" data-game-state></div>
         <div class="room-player-list" data-player-list></div>
+        <div class="room-info-grid">
+          <section class="room-panel">
+            <h2>房间聊天</h2>
+            <div class="room-chat-list" data-chat-list></div>
+            <form class="room-chat-form">
+              <input class="room-chat-input" maxlength="120" placeholder="发送消息" autocomplete="off" />
+              <button class="room-secondary" type="submit">发送</button>
+            </form>
+          </section>
+          <section class="room-panel">
+            <h2>排行榜</h2>
+            <div class="room-leaderboard" data-leaderboard></div>
+          </section>
+          <section class="room-panel">
+            <h2>个人统计</h2>
+            <div class="room-stats" data-player-stats></div>
+          </section>
+        </div>
         <div class="room-footer-actions">
           <button class="room-secondary" data-action="ready">准备</button>
           <button class="room-danger" data-action="leave">离开房间</button>
@@ -104,10 +122,45 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
         <strong>${player.isReady ? '已准备' : '未准备'}</strong>
       </div>
     `).join('')
+
+    const chatEl = element.querySelector('[data-chat-list]')!
+    chatEl.innerHTML = state.chatMessages.length
+      ? state.chatMessages.map((message) => `
+        <div class="room-chat-message">
+          <strong>${message.playerName}</strong>
+          <span>${message.message}</span>
+        </div>
+      `).join('')
+      : '<p class="room-empty">暂无消息</p>'
+
+    const leaderboardEl = element.querySelector('[data-leaderboard]')!
+    leaderboardEl.innerHTML = state.leaderboard.length
+      ? state.leaderboard.slice(0, 5).map((row, index) => `
+        <div class="room-rank-row">
+          <span>#${index + 1} ${row.id}</span>
+          <strong>${row.elo}</strong>
+        </div>
+      `).join('')
+      : '<p class="room-empty">暂无排行</p>'
+
+    const statsEl = element.querySelector('[data-player-stats]')!
+    if (state.playerStats) {
+      const winRate = state.playerStats.gamesPlayed > 0
+        ? Math.round((state.playerStats.gamesWon / state.playerStats.gamesPlayed) * 100)
+        : 0
+      statsEl.innerHTML = `
+        <div class="room-stat-row"><span>ELO</span><strong>${state.playerStats.elo}</strong></div>
+        <div class="room-stat-row"><span>胜率</span><strong>${winRate}%</strong></div>
+        <div class="room-stat-row"><span>最佳</span><strong>${state.playerStats.bestTime ?? '--'} ms</strong></div>
+      `
+    } else {
+      statsEl.innerHTML = '<p class="room-empty">暂无统计</p>'
+    }
   }
 
   const unsubscribe = useRoomStore.subscribe(render)
   useRoomStore.connect()
+  void useRoomStore.loadLeaderboard()
 
   element.querySelector('[data-action="back"]')?.addEventListener('click', options.onBack)
   element.querySelector('[data-action="create"]')?.addEventListener('click', () => {
@@ -130,6 +183,13 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
   element.querySelector('[data-action="ready"]')?.addEventListener('click', () => {
     const currentPlayer = useRoomStore.getState().players[0]
     useRoomStore.setReady(!currentPlayer?.isReady)
+    if (currentPlayer) void useRoomStore.loadPlayerStats(currentPlayer.id)
+  })
+  element.querySelector('.room-chat-form')?.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const input = element.querySelector('.room-chat-input') as HTMLInputElement
+    useRoomStore.sendChatMessage(input.value)
+    input.value = ''
   })
 
   return {

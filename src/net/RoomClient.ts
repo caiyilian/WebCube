@@ -7,6 +7,22 @@ import type {
   Move,
 } from '../../shared/types'
 
+export interface LeaderboardRow {
+  id: string
+  elo: number
+  gamesPlayed: number
+  gamesWon: number
+}
+
+export interface RoomPlayerStats {
+  elo: number
+  gamesPlayed: number
+  gamesWon: number
+  bestTime: number | null
+  totalTime: number
+  history: Array<{ time: number; moves: number; date: number; won: boolean }>
+}
+
 export type RoomSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'
 export type RoomClientListener = (status: ConnectionStatus, error: string | null) => void
@@ -119,6 +135,23 @@ export class RoomClient {
 
   cancelMatch(): void {
     this.emit('cancel-match')
+  }
+
+  sendChatMessage(message: string): void {
+    this.emit('chat-message', message)
+  }
+
+  async fetchLeaderboard(): Promise<LeaderboardRow[]> {
+    const response = await fetch(`${this.url}/api/leaderboard`)
+    if (!response.ok) throw new Error('排行榜加载失败')
+    const data = await response.json() as { leaderboard: LeaderboardRow[] }
+    return data.leaderboard
+  }
+
+  async fetchPlayerStats(playerId: string): Promise<RoomPlayerStats> {
+    const response = await fetch(`${this.url}/api/stats/${encodeURIComponent(playerId)}`)
+    if (!response.ok) throw new Error('个人统计加载失败')
+    return await response.json() as RoomPlayerStats
   }
 
   private setStatus(status: ConnectionStatus, error: string | null): void {
