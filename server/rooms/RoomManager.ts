@@ -132,6 +132,25 @@ export class RoomManager {
     return true
   }
 
+  setTurnMode(roomId: string, enabled: boolean): boolean {
+    const room = this.rooms.get(roomId)
+    if (!room) return false
+    room.turnMode = enabled
+    if (enabled) {
+      room.currentTurn = room.players[0]?.id || null
+    }
+    return true
+  }
+
+  nextTurn(roomId: string): boolean {
+    const room = this.rooms.get(roomId)
+    if (!room || !room.turnMode) return false
+    const currentIndex = room.players.findIndex((p) => p.id === room.currentTurn)
+    const nextIndex = (currentIndex + 1) % room.players.length
+    room.currentTurn = room.players[nextIndex]?.id || null
+    return true
+  }
+
   setPlayerReady(roomId: string, playerId: string, ready: boolean): boolean {
     const room = this.rooms.get(roomId)
     if (!room) return false
