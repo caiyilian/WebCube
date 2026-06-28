@@ -3,6 +3,7 @@ import { HUD } from './components/HUD'
 import { Settings } from './components/Settings'
 import { useGameStore, CubeSize } from './stores/useGameStore'
 import { createHomePage } from './components/HomePage.js'
+import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
 interface GameRoute {
@@ -82,7 +83,7 @@ function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
   useGameStore.setCubeSize(cubeSize)
 
   // Connect HUD to store
-  connectHUD(hud, settings, mode)
+  connectHUD(hud, settings, mode, canvas)
 
   // Start render loop
   canvas.animate()
@@ -90,13 +91,12 @@ function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
   // Handle resize
   window.addEventListener('resize', () => canvas.onResize())
 
-  // Expose for debugging
-  ;(window as any).__WEBCUBE__ = { canvas, hud, settings, store: useGameStore }
+  exposeWebCubeDebugState({ canvas, hud, settings, store: useGameStore })
 
   console.log(`WebCube initialized in ${mode} mode with ${cubeSize}x${cubeSize}x${cubeSize} cube`)
 }
 
-function connectHUD(hud: HUD, settings: Settings, mode: GameMode): void {
+function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas): void {
   // Subscribe to store changes
   useGameStore.subscribe((state) => {
     // Update timer display
@@ -120,7 +120,7 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode): void {
     },
     onReset: () => {
       useGameStore.resetCube()
-      ;(window as any).__WEBCUBE__?.canvas?.cubeRenderer?.reset()
+      canvas.resetCube()
     },
     onSolve: () => {
       useGameStore.autoSolve()
