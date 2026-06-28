@@ -36,3 +36,7 @@ coverage/
 # Misc
 *.tgz
 .cache/
+
+# Tools
+.codegraph/
+.omo/
