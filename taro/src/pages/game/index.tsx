@@ -90,6 +90,7 @@ export default function Game() {
         <View className="cube-placeholder">
           <Text>3D Cube ({cubeSize}×{cubeSize}×{cubeSize})</Text>
           <Text>Mode: {mode}</Text>
+          <Text>当前小程序版本使用 WebGL 占位，后续接入 MiniProgramRenderer。</Text>
         </View>
       </View>
 
