@@ -22,6 +22,9 @@ body,
 
 canvas {
   display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 button {
@@ -101,9 +104,12 @@ a:hover {
   }
 
   .hud-container {
-    padding: 8px 12px;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
     flex-wrap: wrap;
     gap: 6px;
+    max-height: 38vh;
+    overflow-y: auto;
+    align-items: flex-start;
   }
 
   .hud-timer {
@@ -119,6 +125,7 @@ a:hover {
     font-size: 0.75rem;
     min-width: 44px;
     min-height: 44px;
+    flex: 1 1 calc(25% - 6px);
   }
 
   .settings-panel {
@@ -137,6 +144,8 @@ a:hover {
 
   .home-content {
     padding: 20px 16px;
+    max-height: 100svh;
+    overflow-y: auto;
   }
 
   .home-title {
@@ -151,6 +160,7 @@ a:hover {
   .home-mode-card {
     padding: 20px;
     min-height: 120px;
+    width: 100%;
   }
 }
 
@@ -177,6 +187,11 @@ canvas, .hud-container, .home-mode-card {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+canvas {
+  touch-action: none;
 }
 
 /* Prevent pull-to-refresh on mobile */

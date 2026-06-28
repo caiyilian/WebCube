@@ -24,6 +24,7 @@ export class Canvas {
     this.domElement.style.width = '100%'
     this.domElement.style.height = '100%'
     this.domElement.style.display = 'block'
+    this.domElement.style.touchAction = 'none'
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({
