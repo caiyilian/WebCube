@@ -13,6 +13,7 @@ export interface RoomState {
   sharedCubeState: CubeState | null
   turnMode: boolean
   currentTurn: string | null
+  teamElapsed: number
   opponentMoves: Move[]
   gameResult: GameResult | null
   isMatching: boolean
@@ -37,6 +38,7 @@ class RoomStore {
     sharedCubeState: null,
     turnMode: false,
     currentTurn: null,
+    teamElapsed: 0,
     opponentMoves: [],
     gameResult: null,
     isMatching: false,
@@ -116,6 +118,9 @@ class RoomStore {
     client.on('turn-error', (error) => {
       this.setState({ error })
     })
+    client.on('timer-sync', (teamElapsed) => {
+      this.setState({ teamElapsed })
+    })
   }
 
   connect(): void {
@@ -144,6 +149,7 @@ class RoomStore {
       sharedCubeState: null,
       turnMode: false,
       currentTurn: null,
+      teamElapsed: 0,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -165,6 +171,7 @@ class RoomStore {
       sharedCubeState: null,
       turnMode: false,
       currentTurn: null,
+      teamElapsed: 0,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -271,6 +278,7 @@ class RoomStore {
       sharedCubeState: null,
       turnMode: false,
       currentTurn: null,
+      teamElapsed: 0,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,
@@ -293,6 +301,7 @@ class RoomStore {
       sharedCubeState: room.sharedCubeState ?? null,
       turnMode: room.turnMode ?? false,
       currentTurn: room.currentTurn ?? null,
+      teamElapsed: 0,
       opponentMoves: [],
       gameResult: null,
       isMatching: false,

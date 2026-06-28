@@ -196,4 +196,26 @@ describe('RoomManager', () => {
       })
     })
   })
+
+  describe('hints', () => {
+    it('rejects hints outside practice mode', () => {
+      const roomId = roomManager.createRoom({
+        mode: 'coop',
+        host: 'player1',
+        settings: {},
+      })
+      roomManager.joinRoom(roomId, {
+        id: 'player1',
+        name: 'Player 1',
+        color: '#ff0000',
+        isHost: true,
+        isReady: false,
+        moveCount: 0,
+        solveTime: null,
+        hintsUsed: 0,
+      })
+
+      expect(roomManager.getHint(roomId, 'player1')).toBeNull()
+    })
+  })
 })

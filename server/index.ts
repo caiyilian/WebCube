@@ -248,6 +248,11 @@ io.on('connection', (socket) => {
   socket.on('request-hint', () => {
     const roomId = socket.data.roomId
     if (roomId) {
+      const room = roomManager.getRoom(roomId)
+      if (room?.mode !== 'practice') {
+        socket.emit('hint-denied', '协作和对战模式不支持提示')
+        return
+      }
       const hint = roomManager.getHint(roomId, playerId)
       if (hint) {
         socket.emit('hint', hint)

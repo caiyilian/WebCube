@@ -229,7 +229,7 @@ export class RoomManager {
         return
       }
       const elapsed = Date.now() - (room.gameStartTime || Date.now())
-      this.io.to(roomId).emit('timer-update', elapsed)
+      this.io.to(roomId).emit('timer-sync', elapsed)
     }, 100)
   }
 
