@@ -156,12 +156,17 @@ export class RoomManager {
     room.status = 'playing'
     room.scramble = this.generateScramble(25)
 
+    // For coop mode, use shared cube state; for 1v1, per-player state
+    if (room.mode === 'coop') {
+      room.sharedCubeState = this.applyScramble(room.scramble!)
+    }
+
     // Reset player states
     room.players.forEach((player) => {
       player.moveCount = 0
       player.solveTime = null
       player.hintsUsed = 0
-      player.cubeState = this.applyScramble(room.scramble!)
+      player.cubeState = room.mode === 'coop' ? undefined : this.applyScramble(room.scramble!)
     })
 
     this.io.to(roomId).emit('game-start', {
@@ -184,7 +189,26 @@ export class RoomManager {
     if (!room || room.status !== 'playing') return null
 
     const player = room.players.find((p) => p.id === playerId)
-    if (!player || !player.cubeState) return null
+    if (!player) return null
+
+    // For coop mode, use shared cube state
+    if (room.mode === 'coop' && room.sharedCubeState) {
+      room.sharedCubeState = this.applyMoveToState(room.sharedCubeState, move)
+      player.moveCount++
+
+      // Check if solved (team wins)
+      if (this.isSolved(room.sharedCubeState)) {
+        room.players.forEach((p) => {
+          p.solveTime = Date.now()
+        })
+        this.checkGameEnd(roomId)
+      }
+
+      return room.sharedCubeState
+    }
+
+    // For 1v1/practice, use per-player state
+    if (!player.cubeState) return null
 
     player.cubeState = this.applyMoveToState(player.cubeState, move)
     player.moveCount++
