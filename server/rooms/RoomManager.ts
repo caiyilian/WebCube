@@ -14,6 +14,7 @@ const MODE_CONFIG: Record<GameMode, { maxPlayers: number; hintEnabled: boolean }
   '1v1': { maxPlayers: 2, hintEnabled: false },
   coop: { maxPlayers: 4, hintEnabled: false },
   cfop: { maxPlayers: 1, hintEnabled: true },
+  tournament: { maxPlayers: 16, hintEnabled: false },
 }
 
 function generateRoomId(): string {

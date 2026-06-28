@@ -22,7 +22,7 @@ export interface Move {
   timestamp?: number
 }
 
-export type GameMode = 'practice' | '1v1' | 'coop' | 'cfop'
+export type GameMode = 'practice' | '1v1' | 'coop' | 'cfop' | 'tournament'
 
 export interface RoomSettings {
   hintEnabled: boolean

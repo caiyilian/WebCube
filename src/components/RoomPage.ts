@@ -4,7 +4,7 @@ import type { CubeSize } from '../stores/useGameStore'
 import type { GameMode } from '../../shared/types'
 
 export interface RoomPageOptions {
-  mode: Exclude<GameMode, 'practice' | 'cfop'>
+  mode: Exclude<GameMode, 'practice' | 'cfop' | 'tournament'>
   cubeSize: CubeSize
   onBack: () => void
 }
@@ -14,7 +14,7 @@ export interface RoomPage {
   destroy: () => void
 }
 
-const modeTitle: Record<Exclude<GameMode, 'practice' | 'cfop'>, string> = {
+const modeTitle: Record<Exclude<GameMode, 'practice' | 'cfop' | 'tournament'>, string> = {
   '1v1': '1v1 对战房间',
   coop: '协作房间',
 }

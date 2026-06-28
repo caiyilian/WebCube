@@ -7,6 +7,7 @@ import { createRoomPage } from './components/RoomPage'
 import { createCFOPTrainingPanel } from './components/CFOPTrainingPanel'
 import { createReplayPanel } from './components/ReplayPanel'
 import { createAIPanel } from './components/AIPanel'
+import { createTournamentPage } from './components/TournamentPage'
 import { soundManager } from './game/SoundManager'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
@@ -30,6 +31,10 @@ export function normalizeGameRoute(hash: string): GameRoute | null {
   }
 
   if (mode === 'cfop' && cubeSize === 3) {
+    return { mode, cubeSize }
+  }
+
+  if (mode === 'tournament' && cubeSize === 3) {
     return { mode, cubeSize }
   }
 
@@ -76,6 +81,18 @@ function showHomePage(root: HTMLElement) {
 function showRoute(route: GameRoute, root: HTMLElement): void {
   if (route.mode === 'practice' || route.mode === 'cfop') {
     initializeGame(route.mode, route.cubeSize, root)
+    return
+  }
+
+  if (route.mode === 'tournament') {
+    root.innerHTML = ''
+    const page = createTournamentPage({
+      onBack: () => {
+        window.location.hash = ''
+        showHomePage(root)
+      },
+    })
+    root.appendChild(page.element)
     return
   }
 
