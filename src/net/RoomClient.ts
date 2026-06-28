@@ -1,0 +1,109 @@
+import { io, type Socket } from 'socket.io-client'
+import type {
+  ClientToServerEvents,
+  GameMode,
+  RoomSettings,
+  ServerToClientEvents,
+} from '../../shared/types'
+
+export type RoomSocket = Socket<ServerToClientEvents, ClientToServerEvents>
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'
+export type RoomClientListener = (status: ConnectionStatus, error: string | null) => void
+export type RoomSocketFactory = (url: string, options: { autoConnect: boolean; reconnection: boolean }) => RoomSocket
+
+export class RoomClient {
+  private socket: RoomSocket | null = null
+  private listeners = new Set<RoomClientListener>()
+  private eventListeners: Array<{
+    event: keyof ServerToClientEvents
+    listener: ServerToClientEvents[keyof ServerToClientEvents]
+  }> = []
+  private status: ConnectionStatus = 'idle'
+  private error: string | null = null
+
+  constructor(
+    private readonly url = globalThis.location?.origin ?? 'http://localhost:3000',
+    private readonly socketFactory: RoomSocketFactory = io as RoomSocketFactory
+  ) {}
+
+  get connected(): boolean {
+    return this.socket?.connected ?? false
+  }
+
+  get connectionStatus(): ConnectionStatus {
+    return this.status
+  }
+
+  get lastError(): string | null {
+    return this.error
+  }
+
+  subscribe(listener: RoomClientListener): () => void {
+    this.listeners.add(listener)
+    listener(this.status, this.error)
+    return () => this.listeners.delete(listener)
+  }
+
+  connect(): void {
+    if (this.socket?.connected || this.status === 'connecting') return
+    this.socket = this.socketFactory(this.url, { autoConnect: false, reconnection: true })
+    this.setStatus('connecting', null)
+
+    this.socket.on('connect', () => this.setStatus('connected', null))
+    this.socket.on('disconnect', () => this.setStatus('disconnected', null))
+    this.socket.on('connect_error', (error: Error) => this.setStatus('error', error.message))
+    this.socket.on('room-error', (error) => this.setStatus('error', error))
+    this.eventListeners.forEach(({ event, listener }) => {
+      this.socket?.on(event, listener as never)
+    })
+    this.socket.connect()
+  }
+
+  disconnect(): void {
+    this.socket?.disconnect()
+    this.socket = null
+    this.setStatus('disconnected', null)
+  }
+
+  on<EventName extends keyof ServerToClientEvents>(
+    event: EventName,
+    listener: ServerToClientEvents[EventName]
+  ): () => void {
+    const entry = { event, listener: listener as ServerToClientEvents[keyof ServerToClientEvents] }
+    this.eventListeners.push(entry)
+    this.socket?.on(event, listener as never)
+    return () => {
+      this.eventListeners = this.eventListeners.filter((item) => item !== entry)
+      this.socket?.off(event, listener as never)
+    }
+  }
+
+  emit<EventName extends keyof ClientToServerEvents>(
+    event: EventName,
+    ...args: Parameters<ClientToServerEvents[EventName]>
+  ): void {
+    this.socket?.emit(event, ...args)
+  }
+
+  createRoom(mode: GameMode, settings?: Partial<RoomSettings>): void {
+    this.emit('create-room', { mode, settings })
+  }
+
+  joinRoom(roomId: string): void {
+    this.emit('join-room', roomId)
+  }
+
+  leaveRoom(): void {
+    this.emit('leave-room')
+  }
+
+  setReady(ready: boolean): void {
+    this.emit('set-ready', ready)
+  }
+
+  private setStatus(status: ConnectionStatus, error: string | null): void {
+    this.status = status
+    this.error = error
+    this.listeners.forEach((listener) => listener(status, error))
+  }
+}
