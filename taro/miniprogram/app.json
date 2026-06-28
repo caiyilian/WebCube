@@ -1,0 +1,38 @@
+{
+  "appid": "wx1234567890abcdef",
+  "projectname": "webcube",
+  "description": "网页版魔方游戏，支持多人联机、协作解魔方、AI 智能提示",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "preloadBackgroundData": false,
+    "minified": true,
+    "newFeature": true,
+    "coverView": true,
+    "nodeModules": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "scopeDataCheck": false,
+    "uglifyFileName": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "uploadWithSourceMap": true,
+    "compileHotReLoad": false,
+    "lazyloadPlaceholderEnable": false,
+    "preloadBackgroundData": false,
+    "minified": true,
+    "babel": {
+      "enable": true,
+      "outputType": "original"
+    }
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.3.4",
+  "condition": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
+}
