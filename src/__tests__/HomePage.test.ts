@@ -35,6 +35,17 @@ describe('HomePage', () => {
     expect(onModeSelect).toHaveBeenCalledWith('cfop', 3)
   })
 
+  it('offers tournament mode as a 3x3 route entry', () => {
+    const homePage = createHomePage()
+    const onModeSelect = vi.fn()
+    homePage.onModeSelect = onModeSelect
+
+    ;(homePage.element.querySelector('[data-mode="tournament"]') as HTMLButtonElement).click()
+
+    expect(homePage.element.textContent).toContain('锦标赛')
+    expect(onModeSelect).toHaveBeenCalledWith('tournament', 3)
+  })
+
   it('describes the current sticker keyboard interaction', () => {
     const homePage = createHomePage()
 
@@ -48,6 +59,7 @@ describe('normalizeGameRoute', () => {
   it('accepts current game modes and supported cube sizes', () => {
     expect(normalizeGameRoute('#practice-2')).toEqual({ mode: 'practice', cubeSize: 2 })
     expect(normalizeGameRoute('#cfop-3')).toEqual({ mode: 'cfop', cubeSize: 3 })
+    expect(normalizeGameRoute('#tournament-3')).toEqual({ mode: 'tournament', cubeSize: 3 })
     expect(normalizeGameRoute('#1v1-3')).toEqual({ mode: '1v1', cubeSize: 3 })
     expect(normalizeGameRoute('#coop-4')).toEqual({ mode: 'coop', cubeSize: 4 })
   })
@@ -59,6 +71,7 @@ describe('normalizeGameRoute', () => {
   it('rejects unsupported cube sizes and unknown modes', () => {
     expect(normalizeGameRoute('#practice-5')).toBeNull()
     expect(normalizeGameRoute('#cfop-2')).toBeNull()
+    expect(normalizeGameRoute('#tournament-4')).toBeNull()
     expect(normalizeGameRoute('#battle-5')).toBeNull()
     expect(normalizeGameRoute('#unknown-3')).toBeNull()
   })

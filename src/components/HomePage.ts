@@ -50,6 +50,12 @@ export function createHomePage(): HomePage {
           <div class="home-mode-title">协作模式</div>
           <div class="home-mode-desc">2-4 人共同解一个魔方</div>
         </button>
+
+        <button class="home-mode-card" data-mode="tournament">
+          <div class="home-mode-icon">🏆</div>
+          <div class="home-mode-title">锦标赛</div>
+          <div class="home-mode-desc">创建 4/8/16 人淘汰赛 bracket</div>
+        </button>
       </div>
       
       <div class="home-footer">
@@ -80,7 +86,7 @@ export function createHomePage(): HomePage {
   container.querySelectorAll('.home-mode-card').forEach(card => {
     card.addEventListener('click', () => {
       const mode = (card as HTMLElement).dataset.mode as GameMode
-      homePage.onModeSelect(mode, mode === 'cfop' ? 3 : selectedCubeSize)
+      homePage.onModeSelect(mode, mode === 'cfop' || mode === 'tournament' ? 3 : selectedCubeSize)
     })
   })
 

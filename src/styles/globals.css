@@ -752,6 +752,46 @@ html {
   font-size: 0.9rem;
 }
 
+.tournament-page {
+  min-height: 100%;
+  width: 100%;
+  padding: 24px;
+  color: #fff;
+  background: #10131a;
+}
+
+.tournament-shell {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.tournament-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tournament-bracket {
+  display: grid;
+  gap: 14px;
+}
+
+.tournament-round h2 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.tournament-match {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
 @media (max-width: 768px) {
   .room-page {
     align-items: flex-start;
