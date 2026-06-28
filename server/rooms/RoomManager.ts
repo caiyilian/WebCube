@@ -178,7 +178,7 @@ export class RoomManager {
 
     // For coop mode, use shared cube state; for 1v1, per-player state
     if (room.mode === 'coop') {
-      room.sharedCubeState = this.applyScramble(room.scramble!)
+      room.sharedCubeState = this.applyScramble(room.scramble!, room.settings.cubeSize || 3)
     }
 
     // Reset player states
@@ -186,7 +186,7 @@ export class RoomManager {
       player.moveCount = 0
       player.solveTime = null
       player.hintsUsed = 0
-      player.cubeState = room.mode === 'coop' ? undefined : this.applyScramble(room.scramble!)
+      player.cubeState = room.mode === 'coop' ? undefined : this.applyScramble(room.scramble!, room.settings.cubeSize || 3)
     })
 
     this.io.to(roomId).emit('game-start', {
@@ -410,23 +410,79 @@ export class RoomManager {
     return scramble.join(' ')
   }
 
-  private applyScramble(scramble: string): CubeState {
-    // Simplified - return solved state for now
-    // Full implementation would parse scramble and apply moves
+  private createSolvedState(cubeSize = 3): CubeState {
+    const stickersPerFace = cubeSize * cubeSize
     return {
-      U: Array(9).fill('white'),
-      D: Array(9).fill('yellow'),
-      F: Array(9).fill('green'),
-      B: Array(9).fill('blue'),
-      L: Array(9).fill('orange'),
-      R: Array(9).fill('red'),
+      U: Array(stickersPerFace).fill('white'),
+      D: Array(stickersPerFace).fill('yellow'),
+      F: Array(stickersPerFace).fill('green'),
+      B: Array(stickersPerFace).fill('blue'),
+      L: Array(stickersPerFace).fill('orange'),
+      R: Array(stickersPerFace).fill('red'),
     }
   }
 
-  private applyMoveToState(state: CubeState, move: Move): CubeState {
-    // Simplified - return same state for now
-    // Full implementation would apply the move
+  private applyScramble(scramble: string, cubeSize = 3): CubeState {
+    let state = this.createSolvedState(cubeSize)
+    const tokens = scramble.trim().split(/\s+/).filter(Boolean)
+    for (const token of tokens) {
+      const face = token[0] as Move['face']
+      const direction = token.includes("'") ? -1 : 1
+      state = this.applyMoveToState(state, { face, direction })
+    }
     return state
+  }
+
+  private applyMoveToState(state: CubeState, move: Move): CubeState {
+    const newState = JSON.parse(JSON.stringify(state)) as CubeState
+    const { face, direction } = move
+    const n = Math.sqrt(newState.U.length)
+    const n2 = n * n
+
+    const stickers = newState[face]
+    const rotated = new Array(n2)
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (direction === 1) {
+          rotated[c * n + (n - 1 - r)] = stickers[r * n + c]
+        } else {
+          rotated[(n - 1 - c) * n + r] = stickers[r * n + c]
+        }
+      }
+    }
+    newState[face] = rotated
+
+    const row = (r: number) => Array.from({ length: n }, (_, c) => r * n + c)
+    const col = (c: number) => Array.from({ length: n }, (_, r) => r * n + c)
+    const reverse = (indices: number[]) => [...indices].reverse()
+    const last = n - 1
+    const adjMap: Record<Move['face'], { face: keyof CubeState; indices: number[] }[]> = {
+      R: [{ face: 'U', indices: col(last) }, { face: 'F', indices: col(last) }, { face: 'D', indices: col(last) }, { face: 'B', indices: reverse(col(0)) }],
+      L: [{ face: 'U', indices: col(0) }, { face: 'B', indices: reverse(col(last)) }, { face: 'D', indices: col(0) }, { face: 'F', indices: col(0) }],
+      U: [{ face: 'B', indices: row(0) }, { face: 'R', indices: row(0) }, { face: 'F', indices: row(0) }, { face: 'L', indices: row(0) }],
+      D: [{ face: 'F', indices: row(last) }, { face: 'R', indices: row(last) }, { face: 'B', indices: row(last) }, { face: 'L', indices: row(last) }],
+      F: [{ face: 'U', indices: row(last) }, { face: 'R', indices: col(0) }, { face: 'D', indices: reverse(row(0)) }, { face: 'L', indices: reverse(col(last)) }],
+      B: [{ face: 'U', indices: reverse(row(0)) }, { face: 'L', indices: col(0) }, { face: 'D', indices: row(last) }, { face: 'R', indices: reverse(col(last)) }],
+    }
+
+    const adjacents = adjMap[face]
+    const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
+    if (direction === 1) {
+      const lastStrip = strips[strips.length - 1]
+      for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
+      strips[0] = lastStrip
+    } else {
+      const firstStrip = strips[0]
+      for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
+      strips[strips.length - 1] = firstStrip
+    }
+    adjacents.forEach((a, idx) => {
+      a.indices.forEach((faceIdx, stripIdx) => {
+        newState[a.face][faceIdx] = strips[idx][stripIdx]
+      })
+    })
+
+    return newState
   }
 
   private isSolved(state: CubeState): boolean {
