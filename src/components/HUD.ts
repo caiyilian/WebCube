@@ -1,4 +1,4 @@
-export type GameMode = 'practice' | 'battle' | 'coop'
+import type { GameMode } from '../../shared/types'
 
 export interface HUDCallbacks {
   onScramble?: () => void

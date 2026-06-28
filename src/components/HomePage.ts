@@ -1,4 +1,5 @@
-export type GameMode = 'practice' | 'battle' | 'coop'
+import type { GameMode } from '../../shared/types'
+
 export type CubeSize = 2 | 3 | 4
 
 export interface HomePage {
@@ -32,7 +33,7 @@ export function createHomePage(): HomePage {
           <div class="home-mode-desc">单人练习，支持 AI 提示</div>
         </button>
         
-        <button class="home-mode-card" data-mode="battle">
+        <button class="home-mode-card" data-mode="1v1">
           <div class="home-mode-icon">⚔️</div>
           <div class="home-mode-title">1v1 对战</div>
           <div class="home-mode-desc">实时竞速，谁先还原谁获胜</div>
@@ -45,23 +46,18 @@ export function createHomePage(): HomePage {
         </button>
       </div>
       
-      <div class="home-sizes">
-        <label>魔方阶数：</label>
-        <button class="home-size-btn active" data-size="2">2×2</button>
-        <button class="home-size-btn active" data-size="3">3×3</button>
-        <button class="home-size-btn" data-size="4">4×4</button>
-        <button class="home-size-btn" data-size="5">5×5</button>
-      </div>
-      
       <div class="home-footer">
-        <p>使用键盘 R/L/U/D/F/B 旋转，Shift 反转</p>
-        <p>鼠标拖拽旋转面</p>
+        <p>点击贴纸后，使用方向键或 WASD 按面向贴纸的方向旋转</p>
+        <p>拖动画面可调整观察视角</p>
       </div>
     </div>
   `
 
-  const onModeSelect = (mode: GameMode, cubeSize: CubeSize) => {
-    window.location.hash = `${mode}-${cubeSize}`
+  const homePage: HomePage = {
+    element: container,
+    onModeSelect: (mode: GameMode, cubeSize: CubeSize) => {
+      window.location.hash = `${mode}-${cubeSize}`
+    },
   }
 
   // Add click handlers for cube size
@@ -78,9 +74,9 @@ export function createHomePage(): HomePage {
   container.querySelectorAll('.home-mode-card').forEach(card => {
     card.addEventListener('click', () => {
       const mode = (card as HTMLElement).dataset.mode as GameMode
-      onModeSelect(mode, selectedCubeSize)
+      homePage.onModeSelect(mode, selectedCubeSize)
     })
   })
 
-  return { element: container, onModeSelect }
+  return homePage
 }
