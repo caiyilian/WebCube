@@ -11,6 +11,13 @@ export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnect
 export type RoomClientListener = (status: ConnectionStatus, error: string | null) => void
 export type RoomSocketFactory = (url: string, options: { autoConnect: boolean; reconnection: boolean }) => RoomSocket
 
+function getDefaultServerUrl(): string {
+  const configuredUrl = import.meta.env.VITE_SERVER_URL as string | undefined
+  if (configuredUrl) return configuredUrl
+  if (!globalThis.location) return 'http://localhost:3000'
+  return `${globalThis.location.protocol}//${globalThis.location.hostname}:3000`
+}
+
 export class RoomClient {
   private socket: RoomSocket | null = null
   private listeners = new Set<RoomClientListener>()
@@ -22,7 +29,7 @@ export class RoomClient {
   private error: string | null = null
 
   constructor(
-    private readonly url = globalThis.location?.origin ?? 'http://localhost:3000',
+    private readonly url = getDefaultServerUrl(),
     private readonly socketFactory: RoomSocketFactory = io as RoomSocketFactory
   ) {}
 

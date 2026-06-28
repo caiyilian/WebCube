@@ -66,9 +66,20 @@ io.on('connection', (socket) => {
       host: playerId,
       settings: config.settings,
     })
+    const room = roomManager.joinRoom(roomId, {
+      id: playerId,
+      name: playerName,
+      color: getRandomColor(),
+      isHost: true,
+      isReady: false,
+      moveCount: 0,
+      solveTime: null,
+      hintsUsed: 0,
+    })
     socket.data.roomId = roomId
     socket.join(roomId)
     socket.emit('room-created', roomId)
+    if (room) socket.emit('room-joined', room)
     console.log(`Room created: ${roomId} by ${playerName} (${config.mode})`)
   })
 

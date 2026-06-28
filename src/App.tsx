@@ -3,6 +3,7 @@ import { HUD } from './components/HUD'
 import { Settings } from './components/Settings'
 import { useGameStore, CubeSize } from './stores/useGameStore'
 import { createHomePage } from './components/HomePage.js'
+import { createRoomPage } from './components/RoomPage'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
@@ -42,14 +43,14 @@ function showHomePage(root: HTMLElement) {
 
   // Handle mode selection
   homePage.onModeSelect = (mode: GameMode, cubeSize: CubeSize) => {
-    initializeGame(mode, cubeSize, root)
+    showRoute({ mode, cubeSize }, root)
   }
 
   // Listen for hash changes
   const handleHashChange = () => {
     const route = normalizeGameRoute(window.location.hash)
     if (route) {
-      initializeGame(route.mode, route.cubeSize, root)
+      showRoute(route, root)
     } else {
       showHomePage(root)
     }
@@ -60,8 +61,27 @@ function showHomePage(root: HTMLElement) {
   // Check initial hash
   const route = normalizeGameRoute(window.location.hash)
   if (route) {
-    initializeGame(route.mode, route.cubeSize, root)
+    showRoute(route, root)
   }
+}
+
+function showRoute(route: GameRoute, root: HTMLElement): void {
+  if (route.mode === 'practice') {
+    initializeGame(route.mode, route.cubeSize, root)
+    return
+  }
+
+  root.innerHTML = ''
+  const roomPage = createRoomPage({
+    mode: route.mode,
+    cubeSize: route.cubeSize,
+    onBack: () => {
+      roomPage.destroy()
+      window.location.hash = ''
+      showHomePage(root)
+    },
+  })
+  root.appendChild(roomPage.element)
 }
 
 function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {

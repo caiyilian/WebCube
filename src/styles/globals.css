@@ -425,3 +425,145 @@ html {
   font-size: 0.75rem;
   color: #888;
 }
+
+/* Room Page */
+.room-page {
+  min-height: 100%;
+  width: 100%;
+  background: #111;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.room-shell {
+  width: min(760px, 100%);
+}
+
+.room-header,
+.room-actions,
+.room-footer-actions,
+.room-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-header {
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.room-header h1 {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.room-header p,
+.room-status,
+.room-error {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.room-status {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.room-actions {
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.room-join-form {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 280px;
+}
+
+.room-code-input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  text-transform: uppercase;
+}
+
+.room-primary,
+.room-secondary,
+.room-danger,
+.room-back {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.room-primary {
+  background: #2f80ed;
+  border-color: #2f80ed;
+}
+
+.room-danger {
+  background: rgba(230, 57, 70, 0.2);
+  border-color: rgba(230, 57, 70, 0.35);
+}
+
+.room-error {
+  min-height: 22px;
+  color: #ff8a8a;
+}
+
+.room-card {
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.room-code {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.room-code strong {
+  font-size: 1.8rem;
+  letter-spacing: 0.08em;
+}
+
+.room-player-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.room-player {
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 768px) {
+  .room-page {
+    align-items: flex-start;
+    padding: calc(16px + env(safe-area-inset-top)) 12px 16px;
+    overflow-y: auto;
+  }
+
+  .room-header,
+  .room-footer-actions,
+  .room-join-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
