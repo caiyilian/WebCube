@@ -40,18 +40,17 @@ export function createHomePage(): HomePage {
     </div>
   `
 
-  const _onModeSelect = (_mode: GameMode) => {
-    // Navigation handled by hash change
+  const onModeSelect = (mode: GameMode) => {
+    window.location.hash = mode
   }
-  void _onModeSelect
 
   // Add click handlers
   container.querySelectorAll('.home-mode-card').forEach(card => {
     card.addEventListener('click', () => {
       const mode = (card as HTMLElement).dataset.mode as GameMode
-      window.location.hash = mode
+      onModeSelect(mode)
     })
   })
 
-  return { element: container, onModeSelect: _onModeSelect }
+  return { element: container, onModeSelect }
 }
