@@ -43,6 +43,7 @@ export interface Room {
   sharedCubeState?: CubeState
   turnMode?: boolean
   currentTurn?: string | null
+  gameStartTime?: number
 }
 
 export interface Player {
