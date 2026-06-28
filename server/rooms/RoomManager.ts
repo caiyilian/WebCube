@@ -31,6 +31,7 @@ function generatePlayerColor(index: number): string {
 
 export class RoomManager {
   private rooms = new Map<string, Room>()
+  private playerStats = new Map<string, { elo: number; gamesPlayed: number; gamesWon: number }>()
   private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
   constructor(io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) {
@@ -214,14 +215,19 @@ export class RoomManager {
         winner = 'team'
       }
 
-      // Calculate ELO changes (simplified)
-      const results = room.players.map((player) => ({
-        id: player.id,
-        name: player.name,
-        moveCount: player.moveCount,
-        solveTime: player.solveTime,
-        eloChange: 0, // TODO: Implement ELO calculation
-      }))
+      // Calculate ELO changes
+      const winnerId = winner
+      const results = room.players.map((player) => {
+        const isWinner = player.id === winnerId
+        const eloChange = this.calculateELO(player.id, winnerId, isWinner)
+        return {
+          id: player.id,
+          name: player.name,
+          moveCount: player.moveCount,
+          solveTime: player.solveTime,
+          eloChange,
+        }
+      })
 
       const gameResult: GameResult = {
         winner,
@@ -342,5 +348,27 @@ export class RoomManager {
       }
     }
     return true
+  }
+
+  private calculateELO(playerId: string, winnerId: string, isWinner: boolean): number {
+    const K = 32 // ELO K-factor
+    const playerStats = this.playerStats.get(playerId) || { elo: 1200, gamesPlayed: 0, gamesWon: 0 }
+    const opponentStats = this.playerStats.get(winnerId) || { elo: 1200, gamesPlayed: 0, gamesWon: 0 }
+
+    const expectedScore = 1 / (1 + Math.pow(10, (opponentStats.elo - playerStats.elo) / 400))
+    const actualScore = isWinner ? 1 : 0
+
+    return Math.round(K * (actualScore - expectedScore))
+  }
+
+  getPlayerStats(playerId: string): { elo: number; gamesPlayed: number; gamesWon: number } {
+    return this.playerStats.get(playerId) || { elo: 1200, gamesPlayed: 0, gamesWon: 0 }
+  }
+
+  getLeaderboard(): Array<{ id: string; elo: number; gamesPlayed: number; gamesWon: number }> {
+    return Array.from(this.playerStats.entries())
+      .map(([id, stats]) => ({ id, ...stats }))
+      .sort((a, b) => b.elo - a.elo)
+      .slice(0, 100)
   }
 }
