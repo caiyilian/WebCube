@@ -174,6 +174,7 @@ export class RoomManager {
 
     room.status = 'playing'
     room.scramble = this.generateScramble(25)
+    room.gameStartTime = Date.now()
 
     // For coop mode, use shared cube state; for 1v1, per-player state
     if (room.mode === 'coop') {
@@ -193,6 +194,21 @@ export class RoomManager {
       mode: room.mode,
       players: room.players,
     })
+
+    // Start team timer broadcast
+    this.startTeamTimer(roomId)
+  }
+
+  private startTeamTimer(roomId: string): void {
+    const interval = setInterval(() => {
+      const room = this.rooms.get(roomId)
+      if (!room || room.status !== 'playing') {
+        clearInterval(interval)
+        return
+      }
+      const elapsed = Date.now() - (room.gameStartTime || Date.now())
+      this.io.to(roomId).emit('timer-update', elapsed)
+    }, 100)
   }
 
   validateMove(roomId: string, move: Move): boolean {
