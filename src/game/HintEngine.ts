@@ -1,139 +1,130 @@
-import { Solver } from './Solver'
-import { CubeState } from './CubeState'
-import type { Move } from '../../shared/types'
+import { solveCube, parseSolution } from './Solver.js'
+import { CubeState, Move, HintData } from '@shared/types.js'
 
 export type HintLevel = 1 | 2 | 3
 
-export interface Hint {
-  move: Move
-  layer: 'R' | 'L' | 'U' | 'D' | 'F' | 'B'
-  direction: 'clockwise' | 'counterclockwise'
-  description: string
-  highlightCubies: { x: number; y: number; z: number }[]
+export interface HintOptions {
+  maxHints?: number
 }
 
 export class HintEngine {
-  private solver: Solver
-  private hintsUsed: number = 0
-  private maxHints: number = 3
+  private hintsUsed = 0
+  private maxHints = 3
+  private hintLevel: HintLevel = 2
 
-  constructor() {
-    this.solver = new Solver()
+  constructor(options: HintOptions = {}) {
+    this.maxHints = options.maxHints ?? 3
   }
 
   // 获取提示
-  public async getHint(cubeState: CubeState, level: HintLevel = 1): Promise<Hint | null> {
+  public async getHint(currentState: CubeState): Promise<HintData | null> {
     if (this.hintsUsed >= this.maxHints) {
       console.warn('Hints limit reached')
       return null
     }
 
     try {
-      const solution = await this.solver.solve(cubeState)
-      const moves = solution.split(' ').filter(m => m.length > 0)
+      const solution = await solveCube(currentState)
+      const moves = parseSolution(solution)
       
       if (moves.length === 0) {
         return null
       }
 
-      const nextMove = moves[0] as Move
-      const hint = this.parseMove(nextMove, level)
-      
+      const nextMove = moves[0]
       this.hintsUsed++
-      
-      return hint
+
+      return {
+        move: this.formatMove(nextMove),
+        layer: nextMove.face,
+        direction: nextMove.direction === 1 ? 'clockwise' : 'counterclockwise',
+        description: this.getMoveDescription(nextMove),
+        highlightCubies: this.getCubiesForLayer(nextMove.face),
+      }
     } catch (error) {
       console.error('Failed to get hint:', error)
       return null
     }
   }
 
-  // 解析操作
-  private parseMove(move: Move, level: HintLevel): Hint {
-    const face = move[0] as 'R' | 'L' | 'U' | 'D' | 'F' | 'B'
-    const isCounterClockwise = move.includes("'")
-    
-    return {
-      move,
-      layer: face,
-      direction: isCounterClockwise ? 'counterclockwise' : 'clockwise',
-      description: this.formatDescription(face, isCounterClockwise, level),
-      highlightCubies: this.getCubiesForLayer(face)
-    }
+  private formatMove(move: Move): string {
+    return move.direction === 1 ? move.face : `${move.face}'`
   }
 
-  // 格式化描述
-  private formatDescription(face: string, isCounterClockwise: boolean, level: HintLevel): string {
+  private getMoveDescription(move: Move): string {
     const faceNames: Record<string, string> = {
-      'R': '右面',
-      'L': '左面',
-      'U': '上面',
-      'D': '下面',
-      'F': '前面',
-      'B': '后面'
+      R: '右面',
+      L: '左面',
+      U: '上层',
+      D: '下层',
+      F: '前面',
+      B: '后面',
     }
-    
-    const direction = isCounterClockwise ? '逆时针' : '顺时针'
-    const faceName = faceNames[face] || face
-    
-    if (level === 1) {
-      return `${faceName}`
-    } else if (level === 2) {
-      return `${faceName} ${direction}`
+
+    const directionText = move.direction === 1 ? '顺时针' : '逆时针'
+    const faceName = faceNames[move.face] || move.face
+
+    if (this.hintLevel === 1) {
+      return faceName
+    } else if (this.hintLevel === 2) {
+      return `${faceName} ${directionText}`
     } else {
-      return `${faceName} ${direction}旋转`
+      return `${faceName} ${directionText}旋转`
     }
   }
 
-  // 获取需要高亮的 cubelet
-  private getCubiesForLayer(face: string): { x: number; y: number; z: number }[] {
-    const cubies: { x: number; y: number; z: number }[] = []
-    
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        switch (face) {
-          case 'R':
-            cubies.push({ x: 1, y: i, z: j })
-            break
-          case 'L':
-            cubies.push({ x: -1, y: i, z: j })
-            break
-          case 'U':
-            cubies.push({ x: i, y: 1, z: j })
-            break
-          case 'D':
-            cubies.push({ x: i, y: -1, z: j })
-            break
-          case 'F':
-            cubies.push({ x: i, y: j, z: 1 })
-            break
-          case 'B':
-            cubies.push({ x: i, y: j, z: -1 })
-            break
-        }
-      }
+  private getCubiesForLayer(face: string): number[] {
+    const layerMap: Record<string, number[]> = {
+      R: [2, 5, 8, 11, 14, 17, 20, 23, 26],
+      L: [0, 3, 6, 9, 12, 15, 18, 21, 24],
+      U: [18, 19, 20, 21, 22, 23, 24, 25, 26],
+      D: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      F: [2, 5, 8, 11, 14, 17, 20, 23, 26],
+      B: [0, 3, 6, 9, 12, 15, 18, 21, 24],
     }
-    
-    return cubies
+
+    return layerMap[face] || []
   }
 
-  // 重置提示计数
-  public resetHintsUsed(): void {
+  public resetHints(): void {
     this.hintsUsed = 0
   }
 
-  // 获取已使用提示数
   public getHintsUsed(): number {
     return this.hintsUsed
   }
 
-  // 获取最大提示数
   public getMaxHints(): number {
     return this.maxHints
   }
 
-  // 销毁
-  public dispose(): void {
-    this.solver.dispose()
+  public setMaxHints(max: number): void {
+    this.maxHints = max
   }
+
+  public setHintLevel(level: HintLevel): void {
+    this.hintLevel = level
+  }
+
+  public getHintLevel(): HintLevel {
+    return this.hintLevel
+  }
+
+  public canUseHint(): boolean {
+    return this.hintsUsed < this.maxHints
+  }
+}
+
+// Singleton instance
+let hintEngineInstance: HintEngine | null = null
+
+export function getHintEngine(options?: HintOptions): HintEngine {
+  if (!hintEngineInstance) {
+    hintEngineInstance = new HintEngine(options)
+  }
+  return hintEngineInstance
+}
+
+export function resetHintEngine(): void {
+  hintEngineInstance = null
 }

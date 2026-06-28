@@ -1,115 +1,195 @@
-import type { CubeState } from './CubeState'
+// Solver wrapper for cubejs (Kociemba algorithm)
+// Runs in a Web Worker to avoid blocking the main thread
 
-// 求解器响应类型
-interface SolverResponse {
-  type: 'solution' | 'error'
-  solution?: string
-  error?: string
+import { CubeState, Move } from '@shared/types.js'
+import { moveToNotation, getSolvedState } from './Scramble.js'
+
+// Worker message types
+export type SolverMessageType = 
+  | 'init'
+  | 'solve'
+  | 'scramble'
+  | 'init-complete'
+  | 'solve-complete'
+  | 'scramble-complete'
+  | 'error'
+
+export interface SolverMessage {
+  type: SolverMessageType
+  payload?: any
+  id: number
 }
 
-export class Solver {
-  private worker: Worker | null = null
-  private isReady: boolean = false
-  private pendingResolve: ((solution: string) => void) | null = null
-  private pendingReject: ((error: Error) => void) | null = null
+let messageId = 0
+const pendingRequests = new Map<number, { resolve: Function; reject: Function }>()
+let worker: Worker | null = null
+let isInitialized = false
 
-  constructor() {
-    this.initWorker()
-  }
+/**
+ * Initialize the solver worker
+ */
+export async function initSolver(): Promise<void> {
+  if (isInitialized) return
 
-  private initWorker(): void {
-    // 创建 Worker
-    const workerCode = `
-      // cubejs 求解器 Worker
-      self.onmessage = async function(e) {
-        const { type, state } = e.data
-        
-        if (type === 'solve') {
-          try {
-            // 动态导入 cubejs
-            const cubejs = await import('https://cdn.jsdelivr.net/npm/cubejs@1.3.0/+esm')
-            
-            // 创建求解器
-            const solver = new cubejs.default()
-            
-            // 求解
-            const solution = solver.solve(state)
-            
-            self.postMessage({
-              type: 'solution',
-              solution
-            })
-          } catch (error) {
-            self.postMessage({
-              type: 'error',
-              error: error.message
-            })
-          }
-        }
-      }
-    `
-
-    // 创建 Blob URL
-    const blob = new Blob([workerCode], { type: 'application/javascript' })
-    const workerUrl = URL.createObjectURL(blob)
-
-    // 创建 Worker
-    this.worker = new Worker(workerUrl)
-    
-    this.worker.onmessage = (e) => {
-      const response: SolverResponse = e.data
-      
-      if (response.type === 'solution' && this.pendingResolve) {
-        this.pendingResolve(response.solution!)
-        this.pendingResolve = null
-        this.pendingReject = null
-      } else if (response.type === 'error' && this.pendingReject) {
-        this.pendingReject(new Error(response.error))
-        this.pendingResolve = null
-        this.pendingReject = null
-      }
-    }
-
-    this.worker.onerror = (error) => {
-      console.error('Solver worker error:', error)
-      if (this.pendingReject) {
-        this.pendingReject(new Error('Worker error'))
-        this.pendingResolve = null
-        this.pendingReject = null
-      }
-    }
-
-    this.isReady = true
-  }
-
-  // 求解魔方
-  public solve(cubeState: CubeState): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!this.worker || !this.isReady) {
-        reject(new Error('Solver not ready'))
-        return
-      }
-
-      this.pendingResolve = resolve
-      this.pendingReject = reject
-
-      // 序列化状态
-      const stateString = cubeState.serialize()
-
-      // 发送到 Worker
-      this.worker.postMessage({
-        type: 'solve',
-        state: stateString
+  return new Promise((resolve, reject) => {
+    try {
+      // Create worker from the solver worker file
+      worker = new Worker(new URL('./workers/solver.worker.ts', import.meta.url), {
+        type: 'module',
       })
-    })
+
+      worker.onmessage = (event: MessageEvent<SolverMessage>) => {
+        const { type, payload, id } = event.data
+        const pending = pendingRequests.get(id)
+        
+        if (!pending) return
+
+        switch (type) {
+          case 'init-complete':
+            isInitialized = true
+            pending.resolve(payload)
+            break
+          case 'solve-complete':
+            pending.resolve(payload)
+            break
+          case 'scramble-complete':
+            pending.resolve(payload)
+            break
+          case 'error':
+            pending.reject(new Error(payload.message))
+            break
+        }
+        pendingRequests.delete(id)
+      }
+
+      worker.onerror = (error) => {
+        reject(error)
+      }
+
+      // Send init message
+      const id = ++messageId
+      pendingRequests.set(id, { resolve, reject })
+      worker.postMessage({ type: 'init', id })
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/**
+ * Solve a cube state using Kociemba algorithm
+ * @param cubeState Current cube state
+ * @returns Solution as space-separated move notation
+ */
+export async function solveCube(cubeState: CubeState): Promise<string> {
+  if (!isInitialized) {
+    await initSolver()
   }
 
-  // 销毁 Worker
-  public dispose(): void {
-    if (this.worker) {
-      this.worker.terminate()
-      this.worker = null
-      this.isReady = false
+  return new Promise((resolve, reject) => {
+    if (!worker) {
+      reject(new Error('Worker not initialized'))
+      return
     }
+
+    const id = ++messageId
+    pendingRequests.set(id, { resolve, reject })
+    
+    // Convert our cube state to cubejs format
+    const cubejsState = convertToCubeJS(cubeState)
+    
+    worker.postMessage({
+      type: 'solve',
+      payload: { cubeState: cubejsState },
+      id,
+    })
+  })
+}
+
+/**
+ * Generate a random scramble
+ * @returns Scramble notation string
+ */
+export async function generateScramble(): Promise<string> {
+  if (!isInitialized) {
+    await initSolver()
+  }
+
+  return new Promise((resolve, reject) => {
+    if (!worker) {
+      reject(new Error('Worker not initialized'))
+      return
+    }
+
+    const id = ++messageId
+    pendingRequests.set(id, { resolve, reject })
+    worker.postMessage({ type: 'scramble', id })
+  })
+}
+
+/**
+ * Convert our cube state format to cubejs format
+ * cubejs expects a 54-character string: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
+ */
+function convertToCubeJS(cubeState: CubeState): string {
+  // Face order for cubejs: U, R, F, D, L, B
+  // Each face has 9 stickers
+  const faceOrder: (keyof CubeState)[] = ['U', 'R', 'F', 'D', 'L', 'B']
+  
+  let result = ''
+  for (const face of faceOrder) {
+    const stickers = cubeState[face]
+    // Map our color names to cubejs single-letter codes
+    const colorMap: Record<string, string> = {
+      'white': 'U',
+      'yellow': 'D',
+      'green': 'F',
+      'blue': 'B',
+      'orange': 'L',
+      'red': 'R',
+    }
+    
+    for (const color of stickers) {
+      result += colorMap[color] || 'U'
+    }
+  }
+  
+  return result
+}
+
+/**
+ * Convert cubejs solution to our Move format
+ */
+export function parseSolution(solution: string): Move[] {
+  const moves = solution.trim().split(/\s+/).filter(m => m.length > 0)
+  return moves.map(notationToMove)
+}
+
+/**
+ * Convert standard notation to our Move format
+ */
+function notationToMove(notation: string): Move {
+  const face = notation[0] as Move['face']
+  const suffix = notation.slice(1)
+  const direction = suffix === "'" ? -1 : 1
+  return { face, direction }
+}
+
+/**
+ * Check if solver is ready
+ */
+export function isSolverReady(): boolean {
+  return isInitialized
+}
+
+/**
+ * Terminate the worker
+ */
+export function terminateSolver(): void {
+  if (worker) {
+    worker.terminate()
+    worker = null
+    isInitialized = false
+    pendingRequests.clear()
   }
 }
