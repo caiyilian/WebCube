@@ -66,6 +66,12 @@ export class RoomManager {
     return this.rooms.get(roomId)
   }
 
+  isRoomFull(roomId: string): boolean {
+    const room = this.rooms.get(roomId)
+    if (!room) return false
+    return room.players.length >= room.maxPlayers
+  }
+
   getPublicRooms(): Room[] {
     return Array.from(this.rooms.values()).filter(
       (room) => room.status === 'waiting' && room.players.length < room.maxPlayers
@@ -75,8 +81,14 @@ export class RoomManager {
   joinRoom(roomId: string, player: Player): Room | null {
     const room = this.rooms.get(roomId)
     if (!room) return null
-    if (room.players.length >= room.maxPlayers) return null
-    if (room.status !== 'waiting') return null
+    if (room.status !== 'waiting' && room.status !== 'playing') return null
+
+    // If room is full, add as spectator
+    if (room.players.length >= room.maxPlayers) {
+      if (room.spectators.length >= 6) return null // Max 6 spectators
+      room.spectators.push(player)
+      return room
+    }
 
     // Set host if first player
     if (room.players.length === 0) {

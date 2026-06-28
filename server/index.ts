@@ -63,6 +63,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('join-room', (roomId) => {
+    const isSpectator = roomManager.isRoomFull(roomId)
     const room = roomManager.joinRoom(roomId, {
       id: playerId,
       name: playerName,
@@ -82,8 +83,14 @@ io.on('connection', (socket) => {
     socket.data.roomId = roomId
     socket.join(roomId)
     socket.emit('room-joined', room)
-    socket.to(roomId).emit('player-joined', room.players.find(p => p.id === playerId)!)
-    console.log(`${playerName} joined room ${roomId}`)
+
+    if (isSpectator) {
+      socket.to(roomId).emit('spectator-joined', { id: playerId, name: playerName })
+      console.log(`${playerName} joined room ${roomId} as spectator`)
+    } else {
+      socket.to(roomId).emit('player-joined', room.players.find(p => p.id === playerId)!)
+      console.log(`${playerName} joined room ${roomId}`)
+    }
   })
 
   socket.on('leave-room', () => {
