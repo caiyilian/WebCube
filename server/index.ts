@@ -38,6 +38,16 @@ app.post('/api/rooms', express.json(), (req, res) => {
   res.json({ roomId })
 })
 
+app.get('/api/leaderboard', (_req, res) => {
+  const leaderboard = roomManager.getLeaderboard()
+  res.json({ leaderboard })
+})
+
+app.get('/api/stats/:playerId', (req, res) => {
+  const stats = roomManager.getPlayerStats(req.params.playerId)
+  res.json(stats)
+})
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
