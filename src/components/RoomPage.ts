@@ -62,6 +62,7 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
           <span>房间码</span>
           <strong data-room-code>------</strong>
         </div>
+        <div class="room-game-state" data-game-state></div>
         <div class="room-player-list" data-player-list></div>
         <div class="room-footer-actions">
           <button class="room-secondary" data-action="ready">准备</button>
@@ -79,6 +80,15 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     roomCard.hidden = !state.roomId
     roomActions.hidden = Boolean(state.roomId)
     element.querySelector('[data-room-code]')!.textContent = state.roomId ?? '------'
+    const gameStateEl = element.querySelector('[data-game-state]')!
+    if (state.gameResult) {
+      const winner = state.gameResult.players.find((player) => player.id === state.gameResult?.winner)
+      gameStateEl.textContent = `比赛结束，胜者：${winner?.name ?? state.gameResult.winner ?? '无'}`
+    } else if (state.gameStarted) {
+      gameStateEl.textContent = `比赛进行中，打乱：${state.scramble ?? ''}`
+    } else {
+      gameStateEl.textContent = '等待玩家准备'
+    }
 
     const playersEl = element.querySelector('[data-player-list]')!
     playersEl.innerHTML = state.players.map((player) => `

@@ -81,4 +81,25 @@ describe('useRoomStore', () => {
     expect(useRoomStore.getState().roomId).toBe('ABC123')
     expect(useRoomStore.getState().players).toEqual([player])
   })
+
+  it('tracks 1v1 game events', () => {
+    const socket = new FakeSocket()
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+
+    useRoomStore.attachClient(client)
+    useRoomStore.connect()
+    socket.trigger('game-start', { scramble: "R U R'", mode: '1v1', players: [player] })
+    socket.trigger('opponent-move', { face: 'R', direction: 1 })
+    socket.trigger('game-end', {
+      winner: 'p1',
+      players: [{ id: 'p1', name: 'Player', moveCount: 10, solveTime: 1000, eloChange: 16 }],
+      scramble: "R U R'",
+      duration: 1000,
+    })
+
+    expect(useRoomStore.getState().scramble).toBe("R U R'")
+    expect(useRoomStore.getState().opponentMoves).toEqual([{ face: 'R', direction: 1 }])
+    expect(useRoomStore.getState().gameStarted).toBe(false)
+    expect(useRoomStore.getState().gameResult?.winner).toBe('p1')
+  })
 })

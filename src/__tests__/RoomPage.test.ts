@@ -20,6 +20,10 @@ const roomState: RoomState = {
   roomId: 'ABC123',
   currentRoom: null,
   players: [player],
+  gameStarted: false,
+  scramble: null,
+  opponentMoves: [],
+  gameResult: null,
 }
 
 describe('RoomPage', () => {
@@ -43,6 +47,30 @@ describe('RoomPage', () => {
     expect(page.element.textContent).toContain('ABC123')
     expect(page.element.textContent).toContain('Alice（房主）')
     expect(page.element.textContent).toContain('未准备')
+    expect(page.element.textContent).toContain('等待玩家准备')
+  })
+
+  it('renders active game and result states', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({ ...roomState, gameStarted: true, scramble: "R U R'" })
+      listener({
+        ...roomState,
+        gameResult: {
+          winner: 'p1',
+          players: [{ id: 'p1', name: 'Alice', moveCount: 8, solveTime: 1000, eloChange: 16 }],
+          scramble: "R U R'",
+          duration: 1000,
+        },
+      })
+      return () => undefined
+    })
+
+    const page = createRoomPage({ mode: '1v1', cubeSize: 3, onBack: vi.fn() })
+
+    expect(page.element.textContent).toContain('比赛结束，胜者：Alice')
   })
 
   it('sends create, join, ready and leave actions through the store', () => {

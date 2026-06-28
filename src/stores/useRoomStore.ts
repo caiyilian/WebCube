@@ -1,5 +1,5 @@
 import { RoomClient, type ConnectionStatus } from '../net/RoomClient'
-import type { GameMode, Player, Room, RoomSettings } from '../../shared/types'
+import type { GameMode, GameResult, Move, Player, Room, RoomSettings } from '../../shared/types'
 
 export interface RoomState {
   connectionStatus: ConnectionStatus
@@ -7,6 +7,10 @@ export interface RoomState {
   currentRoom: Room | null
   roomId: string | null
   players: Player[]
+  gameStarted: boolean
+  scramble: string | null
+  opponentMoves: Move[]
+  gameResult: GameResult | null
 }
 
 type Listener = (state: RoomState) => void
@@ -18,6 +22,10 @@ class RoomStore {
     currentRoom: null,
     roomId: null,
     players: [],
+    gameStarted: false,
+    scramble: null,
+    opponentMoves: [],
+    gameResult: null,
   }
   private listeners = new Set<Listener>()
   private client: RoomClient | null = null
@@ -54,6 +62,15 @@ class RoomStore {
       })
     })
     client.on('room-error', (error) => this.setState({ error, connectionStatus: 'error' }))
+    client.on('game-start', ({ scramble, players }) => {
+      this.setState({ gameStarted: true, scramble, players, gameResult: null, error: null })
+    })
+    client.on('opponent-move', (move) => {
+      this.setState({ opponentMoves: [...this.state.opponentMoves, move] })
+    })
+    client.on('game-end', (gameResult) => {
+      this.setState({ gameStarted: false, gameResult })
+    })
   }
 
   connect(): void {
@@ -72,12 +89,28 @@ class RoomStore {
 
   disconnect(): void {
     this.client?.disconnect()
-    this.setState({ currentRoom: null, roomId: null, players: [] })
+    this.setState({
+      currentRoom: null,
+      roomId: null,
+      players: [],
+      gameStarted: false,
+      scramble: null,
+      opponentMoves: [],
+      gameResult: null,
+    })
   }
 
   leaveRoom(): void {
     this.client?.leaveRoom()
-    this.setState({ currentRoom: null, roomId: null, players: [] })
+    this.setState({
+      currentRoom: null,
+      roomId: null,
+      players: [],
+      gameStarted: false,
+      scramble: null,
+      opponentMoves: [],
+      gameResult: null,
+    })
   }
 
   setReady(ready: boolean): void {
@@ -92,6 +125,10 @@ class RoomStore {
     }
   }
 
+  sendMove(move: Move): void {
+    this.client?.sendMove(move)
+  }
+
   reset(): void {
     this.unsubscribeClient?.()
     this.unsubscribeClient = null
@@ -102,6 +139,10 @@ class RoomStore {
       currentRoom: null,
       roomId: null,
       players: [],
+      gameStarted: false,
+      scramble: null,
+      opponentMoves: [],
+      gameResult: null,
     })
   }
 
@@ -111,6 +152,10 @@ class RoomStore {
       roomId: room.id,
       players: room.players,
       error: null,
+      gameStarted: false,
+      scramble: null,
+      opponentMoves: [],
+      gameResult: null,
     })
   }
 

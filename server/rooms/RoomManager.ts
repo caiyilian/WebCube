@@ -299,19 +299,22 @@ export class RoomManager {
       this.io.to(roomId).emit('game-end', gameResult)
 
       // Record player stats
-      const duration = solvedPlayers[0].solveTime! - room.createdAt
+      const duration = solvedPlayers[0].solveTime! - (room.gameStartTime || room.createdAt)
       room.players.forEach((player) => {
         const stats = this.playerStats.get(player.id) || { elo: 1200, gamesPlayed: 0, gamesWon: 0, bestTime: null, totalTime: 0, history: [] }
+        const result = results.find((item) => item.id === player.id)
+        const playerDuration = player.solveTime ? player.solveTime - (room.gameStartTime || room.createdAt) : null
         stats.gamesPlayed++
         if (player.id === winnerId) stats.gamesWon++
-        if (player.solveTime) {
-          stats.totalTime += player.solveTime
-          if (!stats.bestTime || player.solveTime < stats.bestTime) {
-            stats.bestTime = player.solveTime
+        stats.elo += result?.eloChange ?? 0
+        if (playerDuration !== null) {
+          stats.totalTime += playerDuration
+          if (!stats.bestTime || playerDuration < stats.bestTime) {
+            stats.bestTime = playerDuration
           }
         }
         stats.history.push({
-          time: player.solveTime || 0,
+          time: playerDuration || duration,
           moves: player.moveCount,
           date: Date.now(),
           won: player.id === winnerId,

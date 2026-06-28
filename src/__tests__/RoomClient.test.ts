@@ -65,11 +65,13 @@ describe('RoomClient', () => {
     client.createRoom('1v1')
     client.joinRoom('ABC123')
     client.setReady(true)
+    client.sendMove({ face: 'R', direction: 1 })
 
     expect(socket.emitted).toEqual([
       { event: 'create-room', args: [{ mode: '1v1', settings: undefined }] },
       { event: 'join-room', args: ['ABC123'] },
       { event: 'set-ready', args: [true] },
+      { event: 'move', args: [{ face: 'R', direction: 1 }] },
     ])
   })
 
