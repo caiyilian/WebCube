@@ -7,6 +7,7 @@ import { createRoomPage } from './components/RoomPage'
 import { createCFOPTrainingPanel } from './components/CFOPTrainingPanel'
 import { createReplayPanel } from './components/ReplayPanel'
 import { createAIPanel } from './components/AIPanel'
+import { soundManager } from './game/SoundManager'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
@@ -163,16 +164,22 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas
   // Connect HUD callbacks
   hud.setCallbacks({
     onScramble: () => {
+      soundManager.play('scramble')
       useGameStore.scramble(20)
     },
     onReset: () => {
+      soundManager.play('click')
       useGameStore.resetCube()
       canvas.resetCube()
     },
     onSolve: () => {
-      void useGameStore.autoSolve((move) => canvas.animateMove(move))
+      soundManager.play('click')
+      void useGameStore.autoSolve((move) => canvas.animateMove(move)).then(() => {
+        if (useGameStore.getState().isSolved) soundManager.play('solve')
+      })
     },
     onHint: () => {
+      soundManager.play('click')
       const store = useGameStore
       // Hint only available in practice mode
       if (mode !== 'practice') return
@@ -186,12 +193,15 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas
       }
     },
     onUndo: () => {
+      soundManager.play('move')
       useGameStore.undo()
     },
     onRedo: () => {
+      soundManager.play('move')
       useGameStore.redo()
     },
     onSettingsToggle: () => {
+      soundManager.play('click')
       settings.toggle()
     },
   })
