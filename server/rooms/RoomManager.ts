@@ -237,7 +237,7 @@ export class RoomManager {
       move: 'R',
       layer: 'R',
       direction: 'clockwise',
-      description: '右面顺时针旋�?,
+      description: 'Right face clockwise',
       highlightCubies: [],
     }
   }
