@@ -1,5 +1,5 @@
 import { RoomClient, type ConnectionStatus } from '../net/RoomClient'
-import type { Player, Room } from '../../shared/types'
+import type { GameMode, Player, Room, RoomSettings } from '../../shared/types'
 
 export interface RoomState {
   connectionStatus: ConnectionStatus
@@ -46,6 +46,13 @@ class RoomStore {
     client.on('player-left', (playerId) => {
       this.setState({ players: this.state.players.filter((player) => player.id !== playerId) })
     })
+    client.on('player-ready', (playerId) => {
+      this.setState({
+        players: this.state.players.map((player) =>
+          player.id === playerId ? { ...player, isReady: true } : player
+        ),
+      })
+    })
     client.on('room-error', (error) => this.setState({ error, connectionStatus: 'error' }))
   }
 
@@ -53,9 +60,49 @@ class RoomStore {
     this.client?.connect()
   }
 
+  createRoom(mode: GameMode, settings?: Partial<RoomSettings>): void {
+    this.client?.connect()
+    this.client?.createRoom(mode, settings)
+  }
+
+  joinRoom(roomId: string): void {
+    this.client?.connect()
+    this.client?.joinRoom(roomId.trim().toUpperCase())
+  }
+
   disconnect(): void {
     this.client?.disconnect()
     this.setState({ currentRoom: null, roomId: null, players: [] })
+  }
+
+  leaveRoom(): void {
+    this.client?.leaveRoom()
+    this.setState({ currentRoom: null, roomId: null, players: [] })
+  }
+
+  setReady(ready: boolean): void {
+    this.client?.setReady(ready)
+    const [currentPlayer] = this.state.players
+    if (currentPlayer) {
+      this.setState({
+        players: this.state.players.map((player, index) =>
+          index === 0 ? { ...player, isReady: ready } : player
+        ),
+      })
+    }
+  }
+
+  reset(): void {
+    this.unsubscribeClient?.()
+    this.unsubscribeClient = null
+    this.client = null
+    this.setState({
+      connectionStatus: 'idle',
+      error: null,
+      currentRoom: null,
+      roomId: null,
+      players: [],
+    })
   }
 
   setRoom(room: Room): void {
