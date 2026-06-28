@@ -16,6 +16,21 @@ export class HUD {
   
   private callbacks: HUDCallbacks = {}
   private hintBtn: HTMLButtonElement | null = null
+  private onKeyDown = (event: KeyboardEvent): void => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+
+    const isModifierPressed = event.ctrlKey || event.metaKey
+    if (!isModifierPressed) return
+
+    const key = event.key.toLowerCase()
+    if (key === 'z' && !event.shiftKey) {
+      event.preventDefault()
+      this.callbacks.onUndo?.()
+    } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+      event.preventDefault()
+      this.callbacks.onRedo?.()
+    }
+  }
 
   constructor(_mode: GameMode = 'practice') {
     void _mode // Mode used for future multiplayer features
@@ -47,6 +62,8 @@ export class HUD {
         this.handleAction(action!)
       })
     })
+
+    window.addEventListener('keydown', this.onKeyDown)
   }
 
   private handleAction(action: string): void {

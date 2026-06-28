@@ -109,8 +109,8 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode): void {
       hud.setTimerDisplay(seconds)
     }
 
-    // Update move count
-    hud.setMoveCount(state.moveHistory.length)
+    // Update visible move count based on the current undo/redo cursor.
+    hud.setMoveCount(Math.max(0, state.moveHistoryIndex + 1))
   })
 
   // Connect HUD callbacks
