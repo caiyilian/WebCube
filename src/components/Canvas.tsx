@@ -92,6 +92,26 @@ export class Canvas {
     this.cubeRenderer.reset()
   }
 
+  public async animateMove(move: Move): Promise<void> {
+    const axisMap: Record<string, 'x' | 'y' | 'z'> = {
+      R: 'x', L: 'x',
+      U: 'y', D: 'y',
+      F: 'z', B: 'z',
+    }
+    const layerMap: Record<string, number> = {
+      R: 1, L: -1,
+      U: 1, D: -1,
+      F: 1, B: -1,
+    }
+
+    const axis = move.axis ?? axisMap[move.face]
+    const layer = move.layer ?? layerMap[move.face]
+    if (axis === undefined || layer === undefined) return
+
+    const renderDirection = (layer >= 0 ? -move.direction : move.direction) as 1 | -1
+    await this.cubeRenderer.rotateLayer(axis, layer, renderDirection)
+  }
+
   private setupLights(): void {
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
@@ -180,27 +200,11 @@ export class Canvas {
   }
 
   private async onMove(move: Move): Promise<void> {
-    const axisMap: Record<string, 'x' | 'y' | 'z'> = {
-      R: 'x', L: 'x',
-      U: 'y', D: 'y',
-      F: 'z', B: 'z',
+    if (useGameStore.getState().isSolving) return
+    if (move.layer !== 0) {
+      useGameStore.applyMove(move)
     }
-    const layerMap: Record<string, number> = {
-      R: 1, L: -1,
-      U: 1, D: -1,
-      F: 1, B: -1,
-    }
-
-    const axis = move.axis ?? axisMap[move.face]
-    const layer = move.layer ?? layerMap[move.face]
-    if (axis && layer !== undefined) {
-      if (layer !== 0) {
-        useGameStore.applyMove(move)
-      }
-
-      const renderDirection = (layer >= 0 ? -move.direction : move.direction) as 1 | -1
-      await this.cubeRenderer.rotateLayer(axis, layer, renderDirection)
-    }
+    await this.animateMove(move)
   }
 
   public animate(): void {

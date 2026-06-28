@@ -40,6 +40,7 @@ export class HUD {
       <div class="hud-row">
         <div class="hud-timer">0.000</div>
         <div class="hud-moves">0 步</div>
+        <div class="hud-status" aria-live="polite"></div>
       </div>
       <div class="hud-row hud-buttons">
         <button class="hud-btn" data-action="scramble">打乱</button>
@@ -91,6 +92,16 @@ export class HUD {
     if (this.hintBtn) {
       this.hintBtn.classList.toggle('active', active)
     }
+  }
+
+  public setSolving(active: boolean): void {
+    const statusEl = this.element.querySelector('.hud-status')
+    if (statusEl) statusEl.textContent = active ? '求解中...' : ''
+
+    this.element.querySelectorAll<HTMLButtonElement>('.hud-btn').forEach((button) => {
+      if (button.dataset.action === 'settings') return
+      button.disabled = active
+    })
   }
 
   public hideHintButton(): void {

@@ -190,6 +190,21 @@ describe('useGameStore', () => {
       expect(useGameStore.getState().solverError).toBeNull()
     })
 
+    it('should play solution moves one by one while solving', async () => {
+      useGameStore.applyMove({ face: 'R', direction: 1 })
+      useGameStore.applyMove({ face: 'U', direction: -1 })
+      const playedMoves: string[] = []
+
+      await useGameStore.autoSolve(async (move) => {
+        expect(useGameStore.getState().isSolving).toBe(true)
+        playedMoves.push(`${move.face}${move.direction}`)
+      })
+
+      expect(playedMoves).toEqual(['U1', 'R-1'])
+      expect(useGameStore.getState().isSolving).toBe(false)
+      expect(useGameStore.getState().isSolved).toBe(true)
+    })
+
     it('should stop timer after solve', async () => {
       useGameStore.scramble(5)
       await useGameStore.autoSolve()
