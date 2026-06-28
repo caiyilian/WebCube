@@ -40,6 +40,7 @@ export interface Room {
   status: 'waiting' | 'playing' | 'finished'
   createdAt: number
   settings: RoomSettings
+  sharedCubeState?: CubeState
 }
 
 export interface Player {
