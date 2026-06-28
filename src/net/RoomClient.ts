@@ -4,6 +4,7 @@ import type {
   GameMode,
   RoomSettings,
   ServerToClientEvents,
+  Move,
 } from '../../shared/types'
 
 export type RoomSocket = Socket<ServerToClientEvents, ClientToServerEvents>
@@ -106,6 +107,10 @@ export class RoomClient {
 
   setReady(ready: boolean): void {
     this.emit('set-ready', ready)
+  }
+
+  sendMove(move: Move): void {
+    this.emit('move', move)
   }
 
   private setStatus(status: ConnectionStatus, error: string | null): void {
