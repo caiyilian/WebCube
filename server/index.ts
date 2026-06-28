@@ -137,6 +137,19 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('start-game', () => {
+    const roomId = socket.data.roomId
+    if (!roomId) {
+      socket.emit('room-error', '请先进入房间')
+      return
+    }
+
+    const result = roomManager.startRoom(roomId, playerId)
+    if (!result.ok) {
+      socket.emit('room-error', result.error || '无法开始游戏')
+    }
+  })
+
   // Game events
   socket.on('move', (move: Move) => {
     const roomId = socket.data.roomId

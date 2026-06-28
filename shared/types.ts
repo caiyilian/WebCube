@@ -121,6 +121,7 @@ export interface ClientToServerEvents {
   'leave-room': () => void
   'get-rooms': () => void
   'set-ready': (ready: boolean) => void
+  'start-game': () => void
 
   // Game events
   'move': (move: Move) => void

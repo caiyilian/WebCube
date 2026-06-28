@@ -5,6 +5,8 @@ import type { Player, Room } from '../../shared/types'
 
 class FakeSocket {
   public connected = false
+  public id = 'p1'
+  public emitted: Array<{ event: string; args: unknown[] }> = []
   private handlers = new Map<string, Set<(...args: never[]) => void>>()
 
   on(event: string, handler: (...args: never[]) => void): this {
@@ -18,7 +20,8 @@ class FakeSocket {
     return this
   }
 
-  emit(): this {
+  emit(event: string, ...args: unknown[]): this {
+    this.emitted.push({ event, args })
     return this
   }
 
@@ -83,6 +86,7 @@ describe('useRoomStore', () => {
 
     expect(useRoomStore.getState().connectionStatus).toBe('connected')
     expect(useRoomStore.getState().roomId).toBe('ABC123')
+    expect(useRoomStore.getState().currentPlayerId).toBe('p1')
     expect(useRoomStore.getState().players).toEqual([player])
   })
 
@@ -123,5 +127,20 @@ describe('useRoomStore', () => {
     socket.trigger('match-cancelled')
     expect(useRoomStore.getState().isMatching).toBe(false)
     expect(useRoomStore.getState().error).toBe('已取消匹配')
+  })
+
+  it('sends start game and updates the current player ready state', () => {
+    const socket = new FakeSocket()
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+
+    useRoomStore.attachClient(client)
+    useRoomStore.connect()
+    socket.trigger('room-joined', room)
+    useRoomStore.setReady(true)
+    useRoomStore.startGame()
+
+    expect(useRoomStore.getState().players[0].isReady).toBe(true)
+    expect(socket.emitted).toContainEqual({ event: 'set-ready', args: [true] })
+    expect(socket.emitted).toContainEqual({ event: 'start-game', args: [] })
   })
 })

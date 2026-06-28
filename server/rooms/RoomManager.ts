@@ -168,6 +168,19 @@ export class RoomManager {
     return true
   }
 
+  startRoom(roomId: string, playerId: string): { ok: boolean; error?: string } {
+    const room = this.rooms.get(roomId)
+    if (!room) return { ok: false, error: '房间不存在' }
+    if (room.host !== playerId) return { ok: false, error: '只有房主可以开始游戏' }
+    if (room.status !== 'waiting') return { ok: false, error: '游戏已经开始' }
+    if (room.mode === 'coop' && (room.players.length < 2 || room.players.length > 4)) {
+      return { ok: false, error: '协作模式需要 2-4 名玩家' }
+    }
+
+    this.startGame(roomId)
+    return { ok: true }
+  }
+
   private startGame(roomId: string): void {
     const room = this.rooms.get(roomId)
     if (!room) return
