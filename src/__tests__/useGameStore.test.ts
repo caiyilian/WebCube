@@ -57,6 +57,17 @@ describe('useGameStore', () => {
       expect(useGameStore.getState().moveHistoryIndex).toBe(0)
     })
 
+    it('should expose visible move count through the history cursor', () => {
+      useGameStore.applyMove({ face: 'R', direction: 1 })
+      useGameStore.applyMove({ face: 'U', direction: 1 })
+
+      expect(useGameStore.getState().moveHistoryIndex + 1).toBe(2)
+      useGameStore.undo()
+      expect(useGameStore.getState().moveHistoryIndex + 1).toBe(1)
+      useGameStore.redo()
+      expect(useGameStore.getState().moveHistoryIndex + 1).toBe(2)
+    })
+
     it('should redo undone move', () => {
       useGameStore.applyMove({ face: 'R', direction: 1 })
       useGameStore.undo()
@@ -64,6 +75,7 @@ describe('useGameStore', () => {
       
       const state = useGameStore.getState()
       expect(state.moveHistory).toHaveLength(1)
+      expect(state.moveHistoryIndex).toBe(0)
     })
 
     it('should not undo when history is empty', () => {
