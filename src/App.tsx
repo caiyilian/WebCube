@@ -5,6 +5,7 @@ import { useGameStore, CubeSize } from './stores/useGameStore'
 import { createHomePage } from './components/HomePage.js'
 import { createRoomPage } from './components/RoomPage'
 import { createCFOPTrainingPanel } from './components/CFOPTrainingPanel'
+import { createReplayPanel } from './components/ReplayPanel'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
@@ -106,6 +107,12 @@ function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
 
   const cfopPanel = mode === 'cfop' ? createCFOPTrainingPanel() : null
   if (cfopPanel) root.appendChild(cfopPanel.element)
+
+  const replayPanel = createReplayPanel({
+    onResetView: () => canvas.resetCube(),
+    onReplayMove: (move) => canvas.animateMove(move),
+  })
+  root.appendChild(replayPanel.element)
 
   // Set cube size in store
   useGameStore.setCubeSize(cubeSize)
