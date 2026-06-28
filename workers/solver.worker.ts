@@ -31,7 +31,16 @@ self.onmessage = async (event: MessageEvent) => {
           await initSolver()
         }
         
-        const { cubeState, cubeSize } = payload
+        const { cubeState, cubeSize, moveHistory = [] } = payload
+        if (moveHistory.length > 0) {
+          const moves = invertMoves(moveHistory)
+          self.postMessage({
+            type: 'solve-complete',
+            payload: { solution: formatSolution(moves), moves },
+            id,
+          })
+          break
+        }
         
         // Convert our cube state to cubejs format
         // cubejs uses a different notation, we need to map it
@@ -42,7 +51,7 @@ self.onmessage = async (event: MessageEvent) => {
         
         self.postMessage({ 
           type: 'solve-complete', 
-          payload: { solution: solution.join(' ') },
+          payload: { solution: solution.join(' '), moves: parseSolution(solution.join(' ')) },
           id 
         })
         break
@@ -66,17 +75,36 @@ self.onmessage = async (event: MessageEvent) => {
       default:
         self.postMessage({ 
           type: 'error', 
-          payload: { message: `Unknown message type: ${type}` },
+          error: `Unknown message type: ${type}`,
           id 
         })
     }
   } catch (error) {
     self.postMessage({ 
       type: 'error', 
-      payload: { message: error instanceof Error ? error.message : 'Unknown error' },
+      error: error instanceof Error ? error.message : 'Unknown error',
       id 
     })
   }
+}
+
+function invertMoves(moves: Array<{ face: string; direction: 1 | -1 }>) {
+  return [...moves].reverse().map((move) => ({
+    ...move,
+    direction: move.direction === 1 ? -1 : 1,
+  }))
+}
+
+function formatSolution(moves: Array<{ face: string; direction: 1 | -1 }>): string {
+  return moves.map((move) => `${move.face}${move.direction === -1 ? "'" : ''}`).join(' ')
+}
+
+function parseSolution(solution: string) {
+  if (!solution.trim()) return []
+  return solution.split(/\s+/).map((token) => ({
+    face: token[0],
+    direction: token.includes("'") ? -1 : 1,
+  }))
 }
 
 function convertToCubeJS(cubeState: any, cubeSize: number): string {

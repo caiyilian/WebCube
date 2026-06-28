@@ -1,3 +1,5 @@
+import { solveCubeWithWorker } from '../solver/SolverClient'
+
 export type CubeSize = 2 | 3 | 4
 
 export interface CubeState {
@@ -34,6 +36,9 @@ export interface GameState {
   hintsUsed: number
   maxHints: number
   isSolving: boolean
+  solutionMoves: Move[]
+  solverSolution: string | null
+  solverError: string | null
 }
 
 type Listener = (state: GameState) => void
@@ -181,6 +186,9 @@ class Store {
     hintsUsed: 0,
     maxHints: 3,
     isSolving: false,
+    solutionMoves: [],
+    solverSolution: null,
+    solverError: null,
   }
   private listeners: Set<Listener> = new Set()
 
@@ -205,6 +213,9 @@ class Store {
       moveHistory: [],
       moveHistoryIndex: -1,
       currentHint: null,
+      solutionMoves: [],
+      solverSolution: null,
+      solverError: null,
     })
     this.resetTimer()
   }
@@ -220,6 +231,9 @@ class Store {
       isSolved: checkSolved(newState),
       moveHistory: newHistory,
       moveHistoryIndex: newHistory.length - 1,
+      solutionMoves: [],
+      solverSolution: null,
+      solverError: null,
     })
     if (!this.state.isTimerRunning && moveHistory.length === 0) this.startTimer()
   }
@@ -248,6 +262,9 @@ class Store {
       moveHistory: [],
       moveHistoryIndex: -1,
       currentHint: null,
+      solutionMoves: [],
+      solverSolution: null,
+      solverError: null,
     })
     this.resetTimer()
   }
@@ -262,6 +279,9 @@ class Store {
       isSolved: false,
       moveHistory: [...scrambleMoves],
       moveHistoryIndex: scrambleMoves.length - 1,
+      solutionMoves: [],
+      solverSolution: null,
+      solverError: null,
     })
     this.resetTimer()
   }
@@ -310,17 +330,38 @@ class Store {
 
   async autoSolve(): Promise<void> {
     if (this.state.isSolving) return
-    this.setState({ isSolving: true })
-    const { cubeSize } = this.state
-    this.setState({
-      cubeState: createSolvedState(cubeSize),
-      isSolved: true,
-      isSolving: false,
-      moveHistory: [],
-      moveHistoryIndex: -1,
-    })
-    this.stopTimer()
-    this.clearHint()
+    const { cubeState, cubeSize, moveHistory, moveHistoryIndex } = this.state
+    const activeHistory = moveHistory.slice(0, moveHistoryIndex + 1)
+
+    this.setState({ isSolving: true, solverError: null, solverSolution: null, solutionMoves: [] })
+
+    try {
+      const result = await solveCubeWithWorker({ cubeState, cubeSize, moveHistory: activeHistory })
+      let solvedState = cubeState
+      for (const move of result.moves) solvedState = applyMoveToState(solvedState, move, cubeSize)
+
+      const solved = checkSolved(solvedState)
+      const newHistory = [...activeHistory, ...result.moves]
+      this.setState({
+        cubeState: solvedState,
+        isSolved: solved,
+        isSolving: false,
+        moveHistory: newHistory,
+        moveHistoryIndex: newHistory.length - 1,
+        solutionMoves: result.moves,
+        solverSolution: result.solution,
+        solverError: solved ? null : '求解结果未能还原当前魔方',
+      })
+      this.stopTimer()
+      this.clearHint()
+    } catch (error) {
+      this.setState({
+        isSolving: false,
+        solverError: error instanceof Error ? error.message : '求解失败',
+        solutionMoves: [],
+        solverSolution: null,
+      })
+    }
   }
 }
 

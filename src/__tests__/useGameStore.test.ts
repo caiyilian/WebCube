@@ -185,6 +185,9 @@ describe('useGameStore', () => {
       await useGameStore.autoSolve()
       
       expect(useGameStore.getState().isSolved).toBe(true)
+      expect(useGameStore.getState().solutionMoves.length).toBeGreaterThan(0)
+      expect(useGameStore.getState().solverSolution).not.toBeNull()
+      expect(useGameStore.getState().solverError).toBeNull()
     })
 
     it('should stop timer after solve', async () => {
