@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="title">隐私政策</view>
+  <view class="content">
+    <view class="section">
+      <view class="section-title">1. 信息收集</view>
+      <view class="section-content">
+        我们收集以下信息：
+        <view>- 游戏数据（操作记录、完成时间）</view>
+        <view>- 设备信息（操作系统、屏幕尺寸）</view>
+        <view>- 网络信息（IP地址、连接状态）</view>
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">2. 信息使用</view>
+      <view class="section-content">
+        我们使用收集的信息：
+        <view>- 提供游戏服务</view>
+        <view>- 改善用户体验</view>
+        <view>- 生成排行榜和统计数据</view>
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">3. 信息保护</view>
+      <view class="section-content">
+        我们采取适当的安全措施保护您的个人信息，防止未经授权的访问、更改、披露或销毁。
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">4. 联系我们</view>
+      <view class="section-content">
+        如果您对本隐私政策有任何疑问，请通过以下方式联系我们：
+        <view>邮箱：support@webcube.com</view>
+      </view>
+    </view>
+  </view>
+</view>

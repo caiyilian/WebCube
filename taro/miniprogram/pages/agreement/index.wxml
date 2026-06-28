@@ -1,0 +1,37 @@
+<view class="container">
+  <view class="title">用户协议</view>
+  <view class="content">
+    <view class="section">
+      <view class="section-title">1. 服务条款</view>
+      <view class="section-content">
+        欢迎使用 WebCube 魔方游戏。通过使用本服务，您同意遵守以下条款和条件。
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">2. 用户行为规范</view>
+      <view class="section-content">
+        <view>- 遵守相关法律法规</view>
+        <view>- 不得利用本服务进行违法违规行为</view>
+        <view>- 不得干扰服务的正常运行</view>
+        <view>- 不得侵犯他人的合法权益</view>
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">3. 免责声明</view>
+      <view class="section-content">
+        <view>- 本服务按"现状"提供，不保证服务的连续性</view>
+        <view>- 因不可抗力导致的服务中断，我们不承担责任</view>
+        <view>- 用户自行承担使用本服务的风险</view>
+      </view>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">4. 协议修改</view>
+      <view class="section-content">
+        我们有权随时修改本协议。修改后的协议将在应用内公布。继续使用本服务即表示您同意修改后的协议。
+      </view>
+    </view>
+  </view>
+</view>
