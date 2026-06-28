@@ -36,6 +36,7 @@ coverage/
 # Misc
 *.tgz
 .cache/
+.swc/
 
 # Tools
 .codegraph/
