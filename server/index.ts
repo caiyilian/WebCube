@@ -138,12 +138,30 @@ io.on('connection', (socket) => {
     }
   })
 
+  socket.on('set-turn-mode', (enabled: boolean) => {
+    const roomId = socket.data.roomId
+    if (roomId) {
+      roomManager.setTurnMode(roomId, enabled)
+      io.to(roomId).emit('turn-mode-changed', enabled)
+    }
+  })
+
   socket.on('coop-move', (move: Move) => {
     const roomId = socket.data.roomId
     if (roomId) {
+      // Check turn mode
+      const room = roomManager.getRoom(roomId)
+      if (room?.turnMode && room.currentTurn !== playerId) {
+        socket.emit('turn-error', 'Not your turn')
+        return
+      }
       if (roomManager.validateMove(roomId, move)) {
         io.to(roomId).emit('cube-update', move)
         roomManager.applyMove(roomId, playerId, move)
+        if (room?.turnMode) {
+          roomManager.nextTurn(roomId)
+          io.to(roomId).emit('turn-changed', room.currentTurn)
+        }
       }
     }
   })

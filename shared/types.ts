@@ -41,6 +41,8 @@ export interface Room {
   createdAt: number
   settings: RoomSettings
   sharedCubeState?: CubeState
+  turnMode?: boolean
+  currentTurn?: string | null
 }
 
 export interface Player {
