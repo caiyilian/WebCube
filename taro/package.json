@@ -1,0 +1,29 @@
+{
+  "name": "webcube-taro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebCube - 跨端魔方游戏",
+  "scripts": {
+    "dev:h5": "taro build --type h5 --watch",
+    "build:h5": "taro build --type h5",
+    "dev:weapp": "taro build --type weapp --watch",
+    "build:weapp": "taro build --type weapp"
+  },
+  "dependencies": {
+    "@tarojs/components": "4.0.0",
+    "@tarojs/react": "4.0.0",
+    "@tarojs/runtime": "4.0.0",
+    "@tarojs/taro": "4.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@tarojs/cli": "4.0.0",
+    "@tarojs/webpack5-runner": "4.0.0",
+    "@types/react": "^18.0.0",
+    "@types/three": "^0.185.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.0.0"
+  }
+}
