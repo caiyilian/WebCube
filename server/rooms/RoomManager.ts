@@ -293,7 +293,7 @@ export class RoomManager {
         winner,
         players: results,
         scramble: room.scramble!,
-        duration: solvedPlayers[0].solveTime! - room.createdAt,
+        duration: solvedPlayers[0].solveTime! - (room.gameStartTime || room.createdAt),
       }
 
       this.io.to(roomId).emit('game-end', gameResult)
@@ -340,6 +340,16 @@ export class RoomManager {
       direction: 'clockwise',
       description: 'Right face clockwise',
       highlightCubies: [],
+    }
+  }
+
+  getTeamStats(roomId: string): { totalMoves: number; players: Array<{ id: string; name: string; moveCount: number }> } | null {
+    const room = this.rooms.get(roomId)
+    if (!room) return null
+    const totalMoves = room.players.reduce((sum, p) => sum + p.moveCount, 0)
+    return {
+      totalMoves,
+      players: room.players.map((p) => ({ id: p.id, name: p.name, moveCount: p.moveCount })),
     }
   }
 
