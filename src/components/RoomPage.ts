@@ -49,6 +49,8 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
 
       <div class="room-actions" data-room-actions>
         <button class="room-primary" data-action="create">创建房间</button>
+        <button class="room-secondary" data-action="match">随机匹配</button>
+        <button class="room-secondary" data-action="cancel-match" hidden>取消匹配</button>
         <form class="room-join-form">
           <input class="room-code-input" maxlength="6" placeholder="输入房间码" autocomplete="off" />
           <button class="room-secondary" type="submit">加入</button>
@@ -77,8 +79,13 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     element.querySelector('[data-room-error]')!.textContent = state.error ?? ''
     const roomCard = element.querySelector('[data-room-card]') as HTMLElement
     const roomActions = element.querySelector('[data-room-actions]') as HTMLElement
+    const matchButton = element.querySelector('[data-action="match"]') as HTMLButtonElement
+    const cancelMatchButton = element.querySelector('[data-action="cancel-match"]') as HTMLButtonElement
     roomCard.hidden = !state.roomId
     roomActions.hidden = Boolean(state.roomId)
+    matchButton.hidden = state.isMatching
+    cancelMatchButton.hidden = !state.isMatching
+    cancelMatchButton.textContent = state.isMatching ? '取消匹配（匹配中...）' : '取消匹配'
     element.querySelector('[data-room-code]')!.textContent = state.roomId ?? '------'
     const gameStateEl = element.querySelector('[data-game-state]')!
     if (state.gameResult) {
@@ -105,6 +112,12 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
   element.querySelector('[data-action="back"]')?.addEventListener('click', options.onBack)
   element.querySelector('[data-action="create"]')?.addEventListener('click', () => {
     useRoomStore.createRoom(options.mode, { cubeSize: options.cubeSize })
+  })
+  element.querySelector('[data-action="match"]')?.addEventListener('click', () => {
+    useRoomStore.findMatch(options.mode)
+  })
+  element.querySelector('[data-action="cancel-match"]')?.addEventListener('click', () => {
+    useRoomStore.cancelMatch()
   })
   element.querySelector('.room-join-form')?.addEventListener('submit', (event) => {
     event.preventDefault()

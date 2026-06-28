@@ -106,9 +106,15 @@ export class Matchmaking {
       hintsUsed: 0,
     })
 
+    const room = this.roomManager.getRoom(roomId)
+
     // Notify both players
     this.io.to(player1.playerId).emit('match-found', roomId)
     this.io.to(player2.playerId).emit('match-found', roomId)
+    if (room) {
+      this.io.to(player1.playerId).emit('room-joined', room)
+      this.io.to(player2.playerId).emit('room-joined', room)
+    }
 
     // Join sockets to room
     const socket1 = this.io.sockets.sockets.get(player1.playerId)

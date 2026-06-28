@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { RoomClient, type RoomSocket } from '../net/RoomClient'
 import { useRoomStore } from '../stores/useRoomStore'
 import type { Player, Room } from '../../shared/types'
@@ -69,6 +69,10 @@ const room: Room = {
 }
 
 describe('useRoomStore', () => {
+  afterEach(() => {
+    useRoomStore.reset()
+  })
+
   it('tracks connection and room state from RoomClient', () => {
     const socket = new FakeSocket()
     const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
@@ -101,5 +105,23 @@ describe('useRoomStore', () => {
     expect(useRoomStore.getState().opponentMoves).toEqual([{ face: 'R', direction: 1 }])
     expect(useRoomStore.getState().gameStarted).toBe(false)
     expect(useRoomStore.getState().gameResult?.winner).toBe('p1')
+  })
+
+  it('tracks matchmaking events', () => {
+    const socket = new FakeSocket()
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+
+    useRoomStore.attachClient(client)
+    useRoomStore.findMatch('1v1')
+    expect(useRoomStore.getState().isMatching).toBe(true)
+
+    socket.trigger('match-found', 'MATCH1')
+    expect(useRoomStore.getState().isMatching).toBe(false)
+    expect(useRoomStore.getState().roomId).toBe('MATCH1')
+
+    useRoomStore.findMatch('1v1')
+    socket.trigger('match-cancelled')
+    expect(useRoomStore.getState().isMatching).toBe(false)
+    expect(useRoomStore.getState().error).toBe('已取消匹配')
   })
 })

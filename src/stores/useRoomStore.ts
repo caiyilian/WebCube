@@ -11,6 +11,8 @@ export interface RoomState {
   scramble: string | null
   opponentMoves: Move[]
   gameResult: GameResult | null
+  isMatching: boolean
+  matchStartedAt: number | null
 }
 
 type Listener = (state: RoomState) => void
@@ -26,10 +28,13 @@ class RoomStore {
     scramble: null,
     opponentMoves: [],
     gameResult: null,
+    isMatching: false,
+    matchStartedAt: null,
   }
   private listeners = new Set<Listener>()
   private client: RoomClient | null = null
   private unsubscribeClient: (() => void) | null = null
+  private matchTimeout: ReturnType<typeof setTimeout> | null = null
 
   getState(): RoomState {
     return this.state
@@ -71,6 +76,14 @@ class RoomStore {
     client.on('game-end', (gameResult) => {
       this.setState({ gameStarted: false, gameResult })
     })
+    client.on('match-found', (roomId) => {
+      this.clearMatchTimeout()
+      this.setState({ isMatching: false, matchStartedAt: null, roomId, error: null })
+    })
+    client.on('match-cancelled', () => {
+      this.clearMatchTimeout()
+      this.setState({ isMatching: false, matchStartedAt: null, error: '已取消匹配' })
+    })
   }
 
   connect(): void {
@@ -97,6 +110,8 @@ class RoomStore {
       scramble: null,
       opponentMoves: [],
       gameResult: null,
+      isMatching: false,
+      matchStartedAt: null,
     })
   }
 
@@ -110,6 +125,8 @@ class RoomStore {
       scramble: null,
       opponentMoves: [],
       gameResult: null,
+      isMatching: false,
+      matchStartedAt: null,
     })
   }
 
@@ -129,7 +146,25 @@ class RoomStore {
     this.client?.sendMove(move)
   }
 
+  findMatch(mode: GameMode): void {
+    this.client?.connect()
+    this.client?.findMatch(mode)
+    this.setState({ isMatching: true, matchStartedAt: Date.now(), error: null })
+    this.clearMatchTimeout()
+    this.matchTimeout = setTimeout(() => {
+      this.client?.cancelMatch()
+      this.setState({ isMatching: false, matchStartedAt: null, error: '匹配超时，请稍后重试' })
+    }, 30000)
+  }
+
+  cancelMatch(): void {
+    this.client?.cancelMatch()
+    this.clearMatchTimeout()
+    this.setState({ isMatching: false, matchStartedAt: null, error: '已取消匹配' })
+  }
+
   reset(): void {
+    this.clearMatchTimeout()
     this.unsubscribeClient?.()
     this.unsubscribeClient = null
     this.client = null
@@ -143,6 +178,8 @@ class RoomStore {
       scramble: null,
       opponentMoves: [],
       gameResult: null,
+      isMatching: false,
+      matchStartedAt: null,
     })
   }
 
@@ -156,6 +193,8 @@ class RoomStore {
       scramble: null,
       opponentMoves: [],
       gameResult: null,
+      isMatching: false,
+      matchStartedAt: null,
     })
   }
 
@@ -166,6 +205,11 @@ class RoomStore {
   private setState(partial: Partial<RoomState>): void {
     this.state = { ...this.state, ...partial }
     this.listeners.forEach((listener) => listener(this.state))
+  }
+
+  private clearMatchTimeout(): void {
+    if (this.matchTimeout) clearTimeout(this.matchTimeout)
+    this.matchTimeout = null
   }
 }
 
