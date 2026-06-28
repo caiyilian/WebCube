@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CubeRenderer } from './CubeRenderer'
 import { Interaction } from './Interaction'
 import { CubeState } from './CubeState'
+import { Solver } from './Solver'
 import { generateScramble, scrambleToString } from './Scramble'
 import type { Move } from '../../shared/types'
 
@@ -57,6 +58,9 @@ export function createApp(): HTMLDivElement {
   // 创建逻辑状态
   const cubeState = new CubeState()
 
+  // 创建求解器
+  const solver = new Solver()
+
   // 创建交互控制
   const interaction = new Interaction(cubeRenderer, scene, camera, renderer)
   interaction.onMove((move) => {
@@ -82,7 +86,6 @@ export function createApp(): HTMLDivElement {
     const newCubeRenderer = new CubeRenderer()
     scene.add(newCubeRenderer.getGroup())
     
-    // 注意：这里需要重新绑定交互，但为了简化暂时跳过
     console.log('Cube scrambled!')
   }
 
@@ -96,6 +99,32 @@ export function createApp(): HTMLDivElement {
     scene.add(newCubeRenderer.getGroup())
     
     console.log('Cube reset!')
+  }
+
+  // 自动求解功能
+  async function solveCube(): Promise<void> {
+    try {
+      console.log('Solving...')
+      const solution = await solver.solve(cubeState)
+      console.log('Solution:', solution)
+      
+      // 解析解法字符串
+      const moves = solution.split(' ').filter(m => m.length > 0)
+      
+      // 逐步执行解法
+      for (const moveStr of moves) {
+        const move = moveStr as Move
+        cubeState.applyMove(move)
+        console.log('Applied move:', move)
+        
+        // 等待 200ms
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+      
+      console.log('Cube solved!')
+    } catch (error) {
+      console.error('Solve failed:', error)
+    }
   }
 
   // 添加控制按钮
@@ -116,9 +145,17 @@ export function createApp(): HTMLDivElement {
   const resetButton = document.createElement('button')
   resetButton.textContent = '重置'
   resetButton.style.padding = '10px 20px'
+  resetButton.style.marginRight = '10px'
   resetButton.style.cursor = 'pointer'
   resetButton.onclick = resetCube
   buttonContainer.appendChild(resetButton)
+
+  const solveButton = document.createElement('button')
+  solveButton.textContent = '求解'
+  solveButton.style.padding = '10px 20px'
+  solveButton.style.cursor = 'pointer'
+  solveButton.onclick = solveCube
+  buttonContainer.appendChild(solveButton)
 
   container.appendChild(buttonContainer)
 
