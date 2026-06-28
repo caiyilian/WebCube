@@ -18,6 +18,7 @@ const roomState: RoomState = {
   connectionStatus: 'connected',
   error: null,
   roomId: 'ABC123',
+  currentPlayerId: 'p1',
   currentRoom: null,
   players: [player],
   gameStarted: false,
@@ -41,8 +42,9 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false }
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
-      listener(roomState)
+      listener({ ...roomState, players: [player, teammate] })
       return () => undefined
     })
 
@@ -85,14 +87,17 @@ describe('RoomPage', () => {
     vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
     vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false }
+    const coopState = { ...roomState, players: [player, teammate] }
     vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
-      listener(roomState)
+      listener(coopState)
       return () => undefined
     })
-    vi.spyOn(useRoomStore, 'getState').mockReturnValue(roomState)
+    vi.spyOn(useRoomStore, 'getState').mockReturnValue(coopState)
     const createRoom = vi.spyOn(useRoomStore, 'createRoom').mockImplementation(() => undefined)
     const joinRoom = vi.spyOn(useRoomStore, 'joinRoom').mockImplementation(() => undefined)
     const setReady = vi.spyOn(useRoomStore, 'setReady').mockImplementation(() => undefined)
+    const startGame = vi.spyOn(useRoomStore, 'startGame').mockImplementation(() => undefined)
     const leaveRoom = vi.spyOn(useRoomStore, 'leaveRoom').mockImplementation(() => undefined)
     const findMatch = vi.spyOn(useRoomStore, 'findMatch').mockImplementation(() => undefined)
     const cancelMatch = vi.spyOn(useRoomStore, 'cancelMatch').mockImplementation(() => undefined)
@@ -107,6 +112,7 @@ describe('RoomPage', () => {
       new Event('submit', { bubbles: true, cancelable: true })
     )
     ;(page.element.querySelector('[data-action="ready"]') as HTMLButtonElement).click()
+    ;(page.element.querySelector('[data-action="start"]') as HTMLButtonElement).click()
     ;(page.element.querySelector('[data-action="leave"]') as HTMLButtonElement).click()
 
     expect(createRoom).toHaveBeenCalledWith('coop', { cubeSize: 4 })
@@ -114,7 +120,47 @@ describe('RoomPage', () => {
     expect(cancelMatch).toHaveBeenCalled()
     expect(joinRoom).toHaveBeenCalledWith('xyz789')
     expect(setReady).toHaveBeenCalledWith(true)
+    expect(startGame).toHaveBeenCalled()
     expect(leaveRoom).toHaveBeenCalled()
+  })
+
+  it('shows coop start only for the host when enough players joined', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false }
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({ ...roomState, players: [player, teammate] })
+      return () => undefined
+    })
+
+    const page = createRoomPage({ mode: 'coop', cubeSize: 3, onBack: vi.fn() })
+    const startButton = page.element.querySelector('[data-action="start"]') as HTMLButtonElement
+    const readyButton = page.element.querySelector('[data-action="ready"]') as HTMLButtonElement
+
+    expect(page.element.textContent).toContain('协作房间')
+    expect(startButton.hidden).toBe(false)
+    expect(startButton.disabled).toBe(false)
+    expect(readyButton.hidden).toBe(true)
+  })
+
+  it('hides coop start from non-host players', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false }
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({ ...roomState, currentPlayerId: 'p2', players: [player, teammate] })
+      return () => undefined
+    })
+
+    const page = createRoomPage({ mode: 'coop', cubeSize: 3, onBack: vi.fn() })
+    const startButton = page.element.querySelector('[data-action="start"]') as HTMLButtonElement
+
+    expect(page.element.textContent).toContain('Bob（我）')
+    expect(startButton.hidden).toBe(true)
   })
 
   it('shows room errors', () => {

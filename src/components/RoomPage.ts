@@ -86,6 +86,7 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
         </div>
         <div class="room-footer-actions">
           <button class="room-secondary" data-action="ready">准备</button>
+          <button class="room-primary" data-action="start">开始协作</button>
           <button class="room-danger" data-action="leave">离开房间</button>
         </div>
       </section>
@@ -99,11 +100,20 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     const roomActions = element.querySelector('[data-room-actions]') as HTMLElement
     const matchButton = element.querySelector('[data-action="match"]') as HTMLButtonElement
     const cancelMatchButton = element.querySelector('[data-action="cancel-match"]') as HTMLButtonElement
+    const readyButton = element.querySelector('[data-action="ready"]') as HTMLButtonElement
+    const startButton = element.querySelector('[data-action="start"]') as HTMLButtonElement
+    const currentPlayer = state.players.find((player) => player.id === state.currentPlayerId) ?? state.players[0]
+    const isCoop = options.mode === 'coop'
+    const canStartCoop = Boolean(isCoop && currentPlayer?.isHost && state.players.length >= 2 && !state.gameStarted)
     roomCard.hidden = !state.roomId
     roomActions.hidden = Boolean(state.roomId)
-    matchButton.hidden = state.isMatching
-    cancelMatchButton.hidden = !state.isMatching
+    matchButton.hidden = isCoop || state.isMatching
+    cancelMatchButton.hidden = isCoop || !state.isMatching
     cancelMatchButton.textContent = state.isMatching ? '取消匹配（匹配中...）' : '取消匹配'
+    readyButton.hidden = isCoop
+    startButton.hidden = !isCoop || !currentPlayer?.isHost
+    startButton.disabled = !canStartCoop
+    startButton.textContent = state.players.length < 2 ? '等待队友' : '开始协作'
     element.querySelector('[data-room-code]')!.textContent = state.roomId ?? '------'
     const gameStateEl = element.querySelector('[data-game-state]')!
     if (state.gameResult) {
@@ -118,7 +128,7 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     const playersEl = element.querySelector('[data-player-list]')!
     playersEl.innerHTML = state.players.map((player) => `
       <div class="room-player">
-        <span>${player.name}${player.isHost ? '（房主）' : ''}</span>
+        <span>${player.name}${player.isHost ? '（房主）' : ''}${player.id === state.currentPlayerId ? '（我）' : ''}</span>
         <strong>${player.isReady ? '已准备' : '未准备'}</strong>
       </div>
     `).join('')
@@ -181,9 +191,13 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     useRoomStore.leaveRoom()
   })
   element.querySelector('[data-action="ready"]')?.addEventListener('click', () => {
-    const currentPlayer = useRoomStore.getState().players[0]
+    const state = useRoomStore.getState()
+    const currentPlayer = state.players.find((player) => player.id === state.currentPlayerId) ?? state.players[0]
     useRoomStore.setReady(!currentPlayer?.isReady)
     if (currentPlayer) void useRoomStore.loadPlayerStats(currentPlayer.id)
+  })
+  element.querySelector('[data-action="start"]')?.addEventListener('click', () => {
+    useRoomStore.startGame()
   })
   element.querySelector('.room-chat-form')?.addEventListener('submit', (event) => {
     event.preventDefault()

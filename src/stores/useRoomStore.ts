@@ -6,6 +6,7 @@ export interface RoomState {
   error: string | null
   currentRoom: Room | null
   roomId: string | null
+  currentPlayerId: string | null
   players: Player[]
   gameStarted: boolean
   scramble: string | null
@@ -26,6 +27,7 @@ class RoomStore {
     error: null,
     currentRoom: null,
     roomId: null,
+    currentPlayerId: null,
     players: [],
     gameStarted: false,
     scramble: null,
@@ -60,7 +62,7 @@ class RoomStore {
     })
 
     client.on('room-created', (roomId) => this.setState({ roomId }))
-    client.on('room-joined', (room) => this.setRoom(room))
+    client.on('room-joined', (room) => this.setRoom(room, client.playerId))
     client.on('player-joined', (player) => this.setState({ players: [...this.state.players, player] }))
     client.on('player-left', (playerId) => {
       this.setState({ players: this.state.players.filter((player) => player.id !== playerId) })
@@ -114,6 +116,7 @@ class RoomStore {
     this.setState({
       currentRoom: null,
       roomId: null,
+      currentPlayerId: null,
       players: [],
       gameStarted: false,
       scramble: null,
@@ -131,6 +134,7 @@ class RoomStore {
     this.setState({
       currentRoom: null,
       roomId: null,
+      currentPlayerId: null,
       players: [],
       gameStarted: false,
       scramble: null,
@@ -145,14 +149,18 @@ class RoomStore {
 
   setReady(ready: boolean): void {
     this.client?.setReady(ready)
-    const [currentPlayer] = this.state.players
+    const currentPlayer = this.getCurrentPlayer()
     if (currentPlayer) {
       this.setState({
-        players: this.state.players.map((player, index) =>
-          index === 0 ? { ...player, isReady: ready } : player
+        players: this.state.players.map((player) =>
+          player.id === currentPlayer.id ? { ...player, isReady: ready } : player
         ),
       })
     }
+  }
+
+  startGame(): void {
+    this.client?.startGame()
   }
 
   sendMove(move: Move): void {
@@ -212,6 +220,7 @@ class RoomStore {
       error: null,
       currentRoom: null,
       roomId: null,
+      currentPlayerId: null,
       players: [],
       gameStarted: false,
       scramble: null,
@@ -225,10 +234,11 @@ class RoomStore {
     })
   }
 
-  setRoom(room: Room): void {
+  setRoom(room: Room, currentPlayerId: string | null = this.state.currentPlayerId): void {
     this.setState({
       currentRoom: room,
       roomId: room.id,
+      currentPlayerId,
       players: room.players,
       error: null,
       gameStarted: false,
@@ -254,6 +264,10 @@ class RoomStore {
   private clearMatchTimeout(): void {
     if (this.matchTimeout) clearTimeout(this.matchTimeout)
     this.matchTimeout = null
+  }
+
+  private getCurrentPlayer(): Player | undefined {
+    return this.state.players.find((player) => player.id === this.state.currentPlayerId) ?? this.state.players[0]
   }
 }
 

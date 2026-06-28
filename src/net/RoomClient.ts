@@ -62,6 +62,10 @@ export class RoomClient {
     return this.error
   }
 
+  get playerId(): string | null {
+    return this.socket?.id ?? null
+  }
+
   subscribe(listener: RoomClientListener): () => void {
     this.listeners.add(listener)
     listener(this.status, this.error)
@@ -123,6 +127,10 @@ export class RoomClient {
 
   setReady(ready: boolean): void {
     this.emit('set-ready', ready)
+  }
+
+  startGame(): void {
+    this.emit('start-game')
   }
 
   sendMove(move: Move): void {

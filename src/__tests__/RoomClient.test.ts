@@ -3,6 +3,7 @@ import { RoomClient, type RoomSocket } from '../net/RoomClient'
 
 class FakeSocket {
   public connected = false
+  public id = 'p1'
   public emitted: Array<{ event: string; args: unknown[] }> = []
   private handlers = new Map<string, Set<(...args: never[]) => void>>()
 
@@ -69,6 +70,7 @@ describe('RoomClient', () => {
     client.createRoom('1v1')
     client.joinRoom('ABC123')
     client.setReady(true)
+    client.startGame()
     client.sendMove({ face: 'R', direction: 1 })
     client.findMatch('1v1')
     client.cancelMatch()
@@ -78,6 +80,7 @@ describe('RoomClient', () => {
       { event: 'create-room', args: [{ mode: '1v1', settings: undefined }] },
       { event: 'join-room', args: ['ABC123'] },
       { event: 'set-ready', args: [true] },
+      { event: 'start-game', args: [] },
       { event: 'move', args: [{ face: 'R', direction: 1 }] },
       { event: 'find-match', args: ['1v1'] },
       { event: 'cancel-match', args: [] },
