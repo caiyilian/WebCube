@@ -170,6 +170,18 @@ function generateScramble(moveCount: number): Move[] {
   return moves
 }
 
+function describeMove(move: Move): GameState['currentHint'] {
+  const faceName = { R: '右', L: '左', U: '上', D: '下', F: '前', B: '后' }[move.face]
+  const direction = move.direction === 1 ? 'clockwise' : 'counterclockwise'
+  const directionText = direction === 'clockwise' ? '顺时针' : '逆时针'
+  return {
+    move: move.face,
+    layer: move.face,
+    direction,
+    description: `${faceName}面${directionText}旋转`,
+  }
+}
+
 class Store {
   private state: GameState = {
     cubeSize: 3,
@@ -310,20 +322,21 @@ class Store {
   setHintLevel(level: 1 | 2 | 3): void { this.setState({ hintLevel: level }) }
 
   async requestHint(): Promise<void> {
-    const { hintsUsed, maxHints, moveHistory } = this.state
+    const { hintsUsed, maxHints, cubeState, cubeSize, moveHistory, moveHistoryIndex } = this.state
     if (hintsUsed >= maxHints) return
-    if (moveHistory.length > 0) {
-      const lastMove = moveHistory[moveHistory.length - 1]
-      const reverseMove = lastMove.direction === -1 ? 'clockwise' : 'counterclockwise'
-      const faceName = { R: '右', L: '左', U: '上', D: '下', F: '前', B: '后' }[lastMove.face]
+
+    try {
+      const activeHistory = moveHistory.slice(0, moveHistoryIndex + 1)
+      const result = await solveCubeWithWorker({ cubeState, cubeSize, moveHistory: activeHistory })
+      const nextMove = result.moves[0]
       this.setState({
-        currentHint: { move: lastMove.face, layer: lastMove.face, direction: reverseMove, description: `${faceName}面${reverseMove === 'clockwise' ? '顺时针' : '逆时针'}旋转` },
+        currentHint: nextMove ? describeMove(nextMove) : null,
         hintsUsed: hintsUsed + 1,
       })
-    } else {
+    } catch (error) {
       this.setState({
-        currentHint: { move: 'R', layer: 'R', direction: 'clockwise', description: '右面顺时针旋转' },
-        hintsUsed: hintsUsed + 1,
+        currentHint: null,
+        solverError: error instanceof Error ? error.message : '提示生成失败',
       })
     }
   }

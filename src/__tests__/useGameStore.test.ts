@@ -155,26 +155,26 @@ describe('useGameStore', () => {
   })
 
   describe('hint', () => {
-    it('should return hint based on last move', () => {
+    it('should return hint based on the next solver move', async () => {
       useGameStore.applyMove({ face: 'R', direction: 1 })
-      useGameStore.requestHint()
+      await useGameStore.requestHint()
       
       const state = useGameStore.getState()
       expect(state.currentHint).not.toBeNull()
       expect(state.currentHint?.move).toBe('R')
+      expect(state.currentHint?.direction).toBe('counterclockwise')
     })
 
-    it('should return default hint when no history', () => {
-      useGameStore.requestHint()
+    it('should not invent a hint when no solver move is needed', async () => {
+      await useGameStore.requestHint()
       
       const state = useGameStore.getState()
-      expect(state.currentHint).not.toBeNull()
-      expect(state.currentHint?.move).toBe('R')
+      expect(state.currentHint).toBeNull()
     })
 
-    it('should track hints used', () => {
+    it('should track hints used', async () => {
       useGameStore.resetCube()
-      useGameStore.requestHint()
+      await useGameStore.requestHint()
       expect(useGameStore.getState().hintsUsed).toBe(1)
     })
   })

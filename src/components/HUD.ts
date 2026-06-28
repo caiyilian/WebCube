@@ -1,4 +1,5 @@
 import type { GameMode } from '../../shared/types'
+import type { GameState } from '../stores/useGameStore'
 
 export interface HUDCallbacks {
   onScramble?: () => void
@@ -41,6 +42,7 @@ export class HUD {
         <div class="hud-timer">0.000</div>
         <div class="hud-moves">0 步</div>
         <div class="hud-status" aria-live="polite"></div>
+        <div class="hud-hint" aria-live="polite"></div>
       </div>
       <div class="hud-row hud-buttons">
         <button class="hud-btn" data-action="scramble">打乱</button>
@@ -55,6 +57,7 @@ export class HUD {
 
     // Cache elements
     this.timerElement = this.element.querySelector('.hud-timer')!
+    this.hintBtn = this.element.querySelector('[data-action="hint"]')
 
     // Bind click events
     this.element.querySelectorAll('.hud-btn').forEach(btn => {
@@ -91,6 +94,25 @@ export class HUD {
   public setHintActive(active: boolean): void {
     if (this.hintBtn) {
       this.hintBtn.classList.toggle('active', active)
+    }
+  }
+
+  public setHint(hint: GameState['currentHint'], level: 1 | 2 | 3): void {
+    const hintEl = this.element.querySelector('.hud-hint')
+    if (!hintEl) return
+
+    if (!hint) {
+      hintEl.textContent = ''
+      return
+    }
+
+    if (level === 1) {
+      hintEl.textContent = ''
+    } else if (level === 2) {
+      hintEl.textContent = hint.direction === 'clockwise' ? '↻' : '↺'
+    } else {
+      const direction = hint.direction === 'clockwise' ? '顺时针' : '逆时针'
+      hintEl.textContent = `${hint.description}（${direction}）`
     }
   }
 
