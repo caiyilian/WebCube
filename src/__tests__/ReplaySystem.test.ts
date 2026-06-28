@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ReplayRecorder, ReplayPlayer } from '../game/ReplaySystem.js'
+import type { Move } from '../../shared/types'
 
 describe('ReplaySystem', () => {
   describe('ReplayRecorder', () => {
@@ -44,8 +45,8 @@ describe('ReplaySystem', () => {
 
   describe('ReplayPlayer', () => {
     let player: ReplayPlayer
-    let frameCallback: ReturnType<typeof vi.fn>
-    let completeCallback: ReturnType<typeof vi.fn>
+    let frameCallback: (move: Move, index: number) => void
+    let completeCallback: () => void
 
     beforeEach(() => {
       player = new ReplayPlayer()

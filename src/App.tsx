@@ -2,7 +2,29 @@ import { Canvas } from './components/Canvas'
 import { HUD } from './components/HUD'
 import { Settings } from './components/Settings'
 import { useGameStore, CubeSize } from './stores/useGameStore'
-import { createHomePage, GameMode } from './components/HomePage.js'
+import { createHomePage } from './components/HomePage.js'
+import type { GameMode } from '../shared/types'
+
+interface GameRoute {
+  mode: GameMode
+  cubeSize: CubeSize
+}
+
+export function normalizeGameRoute(hash: string): GameRoute | null {
+  const normalizedHash = hash.replace('#', '')
+  const [rawMode, sizeStr] = normalizedHash.split('-')
+  const mode = rawMode === 'battle' ? '1v1' : rawMode
+  const cubeSize = (parseInt(sizeStr) || 3) as CubeSize
+
+  if (
+    (mode === 'practice' || mode === '1v1' || mode === 'coop') &&
+    (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)
+  ) {
+    return { mode, cubeSize }
+  }
+
+  return null
+}
 
 export function createApp() {
   const root = document.getElementById('root')
@@ -24,11 +46,9 @@ function showHomePage(root: HTMLElement) {
 
   // Listen for hash changes
   const handleHashChange = () => {
-    const hash = window.location.hash.replace('#', '')
-    const [mode, sizeStr] = hash.split('-')
-    const cubeSize = parseInt(sizeStr) as CubeSize || 3
-    if ((mode === 'practice' || mode === 'battle' || mode === 'coop') && (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)) {
-      initializeGame(mode as GameMode, cubeSize, root)
+    const route = normalizeGameRoute(window.location.hash)
+    if (route) {
+      initializeGame(route.mode, route.cubeSize, root)
     } else {
       showHomePage(root)
     }
@@ -37,11 +57,9 @@ function showHomePage(root: HTMLElement) {
   window.addEventListener('hashchange', handleHashChange)
 
   // Check initial hash
-  const initialHash = window.location.hash.replace('#', '')
-  const [mode, sizeStr] = initialHash.split('-')
-  const cubeSize = parseInt(sizeStr) as CubeSize || 3
-  if ((mode === 'practice' || mode === 'battle' || mode === 'coop') && (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)) {
-    initializeGame(mode as GameMode, cubeSize, root)
+  const route = normalizeGameRoute(window.location.hash)
+  if (route) {
+    initializeGame(route.mode, route.cubeSize, root)
   }
 }
 
