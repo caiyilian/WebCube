@@ -1,3 +1,5 @@
+export type CubeSize = 2 | 3 | 4
+
 export interface CubeState {
   U: string[]
   D: string[]
@@ -13,6 +15,7 @@ export interface Move {
 }
 
 export interface GameState {
+  cubeSize: CubeSize
   cubeState: CubeState
   isSolved: boolean
   moveHistory: Move[]
@@ -35,52 +38,105 @@ export interface GameState {
 
 type Listener = (state: GameState) => void
 
-const SOLVED_STATE: CubeState = {
-  U: Array(9).fill('white'),
-  D: Array(9).fill('yellow'),
-  F: Array(9).fill('green'),
-  B: Array(9).fill('blue'),
-  L: Array(9).fill('orange'),
-  R: Array(9).fill('red'),
+function createSolvedState(cubeSize: CubeSize): CubeState {
+  const stickersPerFace = cubeSize * cubeSize
+  return {
+    U: Array(stickersPerFace).fill('white'),
+    D: Array(stickersPerFace).fill('yellow'),
+    F: Array(stickersPerFace).fill('green'),
+    B: Array(stickersPerFace).fill('blue'),
+    L: Array(stickersPerFace).fill('orange'),
+    R: Array(stickersPerFace).fill('red'),
+  }
 }
 
-function applyMoveToState(state: CubeState, move: Move): CubeState {
+function applyMoveToState(state: CubeState, move: Move, cubeSize: CubeSize): CubeState {
   const newState = JSON.parse(JSON.stringify(state)) as CubeState
   const { face, direction } = move
+  const n = cubeSize
+  const n2 = n * n
 
+  // Rotate the face stickers
   const stickers = newState[face]
   if (direction === 1) {
-    newState[face] = [stickers[6], stickers[3], stickers[0], stickers[7], stickers[4], stickers[1], stickers[8], stickers[5], stickers[2]]
-  } else {
-    newState[face] = [stickers[2], stickers[5], stickers[8], stickers[1], stickers[4], stickers[7], stickers[0], stickers[3], stickers[6]]
-  }
-
-  const adjMap: Record<string, { face: keyof CubeState; indices: number[] }[]> = {
-    R: [{ face: 'U', indices: [2, 5, 8] }, { face: 'F', indices: [2, 5, 8] }, { face: 'D', indices: [2, 5, 8] }, { face: 'B', indices: [6, 3, 0] }],
-    L: [{ face: 'U', indices: [0, 3, 6] }, { face: 'B', indices: [8, 5, 2] }, { face: 'D', indices: [0, 3, 6] }, { face: 'F', indices: [0, 3, 6] }],
-    U: [{ face: 'B', indices: [0, 1, 2] }, { face: 'R', indices: [0, 1, 2] }, { face: 'F', indices: [0, 1, 2] }, { face: 'L', indices: [0, 1, 2] }],
-    D: [{ face: 'F', indices: [6, 7, 8] }, { face: 'R', indices: [6, 7, 8] }, { face: 'B', indices: [6, 7, 8] }, { face: 'L', indices: [6, 7, 8] }],
-    F: [{ face: 'U', indices: [6, 7, 8] }, { face: 'R', indices: [0, 3, 6] }, { face: 'D', indices: [2, 1, 0] }, { face: 'L', indices: [8, 5, 2] }],
-    B: [{ face: 'U', indices: [2, 1, 0] }, { face: 'L', indices: [0, 3, 6] }, { face: 'D', indices: [6, 7, 8] }, { face: 'R', indices: [8, 5, 2] }],
-  }
-
-  const adjacents = adjMap[face]
-  if (adjacents) {
-    const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
-    if (direction === 1) {
-      const last = strips[strips.length - 1]
-      for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
-      strips[0] = last
-    } else {
-      const first = strips[0]
-      for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
-      strips[strips.length - 1] = first
+    // Clockwise rotation
+    const rotated = new Array(n2)
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        rotated[c * n + (n - 1 - r)] = stickers[r * n + c]
+      }
     }
-    adjacents.forEach((a, idx) => {
-      a.indices.forEach((faceIdx, stripIdx) => {
-        newState[a.face][faceIdx] = strips[idx][stripIdx]
+    newState[face] = rotated
+  } else {
+    // Counter-clockwise rotation
+    const rotated = new Array(n2)
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        rotated[(n - 1 - c) * n + r] = stickers[r * n + c]
+      }
+    }
+    newState[face] = rotated
+  }
+
+  // Adjacent face strips for 3x3 (simplified - for 2x2 and 4x4 we'd need different logic)
+  // For now, keep 3x3 logic as default, 2x2 uses same face indices but different adjacency
+  if (cubeSize === 3) {
+    const adjMap: Record<string, { face: keyof CubeState; indices: number[] }[]> = {
+      R: [{ face: 'U', indices: [2, 5, 8] }, { face: 'F', indices: [2, 5, 8] }, { face: 'D', indices: [2, 5, 8] }, { face: 'B', indices: [6, 3, 0] }],
+      L: [{ face: 'U', indices: [0, 3, 6] }, { face: 'B', indices: [8, 5, 2] }, { face: 'D', indices: [0, 3, 6] }, { face: 'F', indices: [0, 3, 6] }],
+      U: [{ face: 'B', indices: [0, 1, 2] }, { face: 'R', indices: [0, 1, 2] }, { face: 'F', indices: [0, 1, 2] }, { face: 'L', indices: [0, 1, 2] }],
+      D: [{ face: 'F', indices: [6, 7, 8] }, { face: 'R', indices: [6, 7, 8] }, { face: 'B', indices: [6, 7, 8] }, { face: 'L', indices: [6, 7, 8] }],
+      F: [{ face: 'U', indices: [6, 7, 8] }, { face: 'R', indices: [0, 3, 6] }, { face: 'D', indices: [2, 1, 0] }, { face: 'L', indices: [8, 5, 2] }],
+      B: [{ face: 'U', indices: [2, 1, 0] }, { face: 'L', indices: [0, 3, 6] }, { face: 'D', indices: [6, 7, 8] }, { face: 'R', indices: [8, 5, 2] }],
+    }
+
+    const adjacents = adjMap[face]
+    if (adjacents) {
+      const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
+      if (direction === 1) {
+        const last = strips[strips.length - 1]
+        for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
+        strips[0] = last
+      } else {
+        const first = strips[0]
+        for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
+        strips[strips.length - 1] = first
+      }
+      adjacents.forEach((a, idx) => {
+        a.indices.forEach((faceIdx, stripIdx) => {
+          newState[a.face][faceIdx] = strips[idx][stripIdx]
+        })
       })
-    })
+    }
+  } else if (cubeSize === 2) {
+    // 2x2 adjacency - only corners, no edges
+    const adjMap2: Record<string, { face: keyof CubeState; indices: number[] }[]> = {
+      R: [{ face: 'U', indices: [1, 3] }, { face: 'F', indices: [1, 3] }, { face: 'D', indices: [1, 3] }, { face: 'B', indices: [2, 0] }],
+      L: [{ face: 'U', indices: [0, 2] }, { face: 'B', indices: [3, 1] }, { face: 'D', indices: [0, 2] }, { face: 'F', indices: [0, 2] }],
+      U: [{ face: 'B', indices: [0, 1] }, { face: 'R', indices: [0, 1] }, { face: 'F', indices: [0, 1] }, { face: 'L', indices: [0, 1] }],
+      D: [{ face: 'F', indices: [2, 3] }, { face: 'R', indices: [2, 3] }, { face: 'B', indices: [2, 3] }, { face: 'L', indices: [2, 3] }],
+      F: [{ face: 'U', indices: [2, 3] }, { face: 'R', indices: [0, 2] }, { face: 'D', indices: [1, 0] }, { face: 'L', indices: [3, 1] }],
+      B: [{ face: 'U', indices: [1, 0] }, { face: 'L', indices: [0, 2] }, { face: 'D', indices: [2, 3] }, { face: 'R', indices: [3, 1] }],
+    }
+
+    const adjacents = adjMap2[face]
+    if (adjacents) {
+      const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
+      if (direction === 1) {
+        const last = strips[strips.length - 1]
+        for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
+        strips[0] = last
+      } else {
+        const first = strips[0]
+        for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
+        strips[strips.length - 1] = first
+      }
+      adjacents.forEach((a, idx) => {
+        a.indices.forEach((faceIdx, stripIdx) => {
+          newState[a.face][faceIdx] = strips[idx][stripIdx]
+        })
+      })
+    }
   }
 
   return newState
@@ -111,7 +167,8 @@ function generateScramble(moveCount: number): Move[] {
 
 class Store {
   private state: GameState = {
-    cubeState: { ...SOLVED_STATE },
+    cubeSize: 3,
+    cubeState: createSolvedState(3),
     isSolved: true,
     moveHistory: [],
     moveHistoryIndex: -1,
@@ -139,10 +196,23 @@ class Store {
     this.listeners.forEach((l) => l(this.state))
   }
 
+  setCubeSize(size: CubeSize): void {
+    const solvedState = createSolvedState(size)
+    this.setState({
+      cubeSize: size,
+      cubeState: solvedState,
+      isSolved: true,
+      moveHistory: [],
+      moveHistoryIndex: -1,
+      currentHint: null,
+    })
+    this.resetTimer()
+  }
+
   // Actions
   applyMove(move: Move): void {
-    const { cubeState, moveHistory, moveHistoryIndex } = this.state
-    const newState = applyMoveToState(cubeState, move)
+    const { cubeState, moveHistory, moveHistoryIndex, cubeSize } = this.state
+    const newState = applyMoveToState(cubeState, move, cubeSize)
     const newHistory = moveHistory.slice(0, moveHistoryIndex + 1)
     newHistory.push(move)
     this.setState({
@@ -155,24 +225,25 @@ class Store {
   }
 
   undo(): void {
-    const { moveHistory, moveHistoryIndex } = this.state
+    const { moveHistory, moveHistoryIndex, cubeSize } = this.state
     if (moveHistoryIndex < 0) return
-    let state = { ...SOLVED_STATE }
-    for (let i = 0; i < moveHistoryIndex; i++) state = applyMoveToState(state, moveHistory[i])
+    let state = createSolvedState(cubeSize)
+    for (let i = 0; i < moveHistoryIndex; i++) state = applyMoveToState(state, moveHistory[i], cubeSize)
     this.setState({ cubeState: state, isSolved: checkSolved(state), moveHistoryIndex: moveHistoryIndex - 1 })
   }
 
   redo(): void {
-    const { moveHistory, moveHistoryIndex } = this.state
+    const { moveHistory, moveHistoryIndex, cubeSize } = this.state
     if (moveHistoryIndex >= moveHistory.length - 1) return
-    let state = { ...SOLVED_STATE }
-    for (let i = 0; i <= moveHistoryIndex + 1; i++) state = applyMoveToState(state, moveHistory[i])
+    let state = createSolvedState(cubeSize)
+    for (let i = 0; i <= moveHistoryIndex + 1; i++) state = applyMoveToState(state, moveHistory[i], cubeSize)
     this.setState({ cubeState: state, isSolved: checkSolved(state), moveHistoryIndex: moveHistoryIndex + 1 })
   }
 
   resetCube(): void {
+    const { cubeSize } = this.state
     this.setState({
-      cubeState: { ...SOLVED_STATE },
+      cubeState: createSolvedState(cubeSize),
       isSolved: true,
       moveHistory: [],
       moveHistoryIndex: -1,
@@ -182,9 +253,10 @@ class Store {
   }
 
   scramble(moves = 20): void {
+    const { cubeSize } = this.state
     const scrambleMoves = generateScramble(moves)
-    let state = { ...SOLVED_STATE }
-    for (const move of scrambleMoves) state = applyMoveToState(state, move)
+    let state = createSolvedState(cubeSize)
+    for (const move of scrambleMoves) state = applyMoveToState(state, move, cubeSize)
     this.setState({
       cubeState: state,
       isSolved: false,
@@ -239,8 +311,9 @@ class Store {
   async autoSolve(): Promise<void> {
     if (this.state.isSolving) return
     this.setState({ isSolving: true })
+    const { cubeSize } = this.state
     this.setState({
-      cubeState: { ...SOLVED_STATE },
+      cubeState: createSolvedState(cubeSize),
       isSolved: true,
       isSolving: false,
       moveHistory: [],

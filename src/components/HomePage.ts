@@ -1,17 +1,29 @@
 export type GameMode = 'practice' | 'battle' | 'coop'
+export type CubeSize = 2 | 3 | 4
 
 export interface HomePage {
   element: HTMLElement
-  onModeSelect: (mode: GameMode) => void
+  onModeSelect: (mode: GameMode, cubeSize: CubeSize) => void
 }
 
 export function createHomePage(): HomePage {
+  let selectedCubeSize: CubeSize = 3
+  
   const container = document.createElement('div')
   container.className = 'home-container'
   container.innerHTML = `
     <div class="home-content">
       <h1 class="home-title">WebCube</h1>
       <p class="home-subtitle">网页版魔方游戏</p>
+      
+      <div class="home-size-selector">
+        <label class="home-size-label">魔方阶数:</label>
+        <div class="home-size-buttons">
+          <button class="home-size-btn" data-size="2">2×2</button>
+          <button class="home-size-btn active" data-size="3">3×3</button>
+          <button class="home-size-btn" data-size="4">4×4</button>
+        </div>
+      </div>
       
       <div class="home-modes">
         <button class="home-mode-card" data-mode="practice">
@@ -33,6 +45,14 @@ export function createHomePage(): HomePage {
         </button>
       </div>
       
+      <div class="home-sizes">
+        <label>魔方阶数：</label>
+        <button class="home-size-btn active" data-size="2">2×2</button>
+        <button class="home-size-btn active" data-size="3">3×3</button>
+        <button class="home-size-btn" data-size="4">4×4</button>
+        <button class="home-size-btn" data-size="5">5×5</button>
+      </div>
+      
       <div class="home-footer">
         <p>使用键盘 R/L/U/D/F/B 旋转，Shift 反转</p>
         <p>鼠标拖拽旋转面</p>
@@ -40,15 +60,25 @@ export function createHomePage(): HomePage {
     </div>
   `
 
-  const onModeSelect = (mode: GameMode) => {
-    window.location.hash = mode
+  const onModeSelect = (mode: GameMode, cubeSize: CubeSize) => {
+    window.location.hash = `${mode}-${cubeSize}`
   }
 
-  // Add click handlers
+  // Add click handlers for cube size
+  container.querySelectorAll('.home-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const size = parseInt((btn as HTMLElement).dataset.size!) as CubeSize
+      selectedCubeSize = size
+      container.querySelectorAll('.home-size-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+    })
+  })
+
+  // Add click handlers for mode
   container.querySelectorAll('.home-mode-card').forEach(card => {
     card.addEventListener('click', () => {
       const mode = (card as HTMLElement).dataset.mode as GameMode
-      onModeSelect(mode)
+      onModeSelect(mode, selectedCubeSize)
     })
   })
 
