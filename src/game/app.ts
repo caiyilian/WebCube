@@ -5,7 +5,9 @@ import { Interaction } from './Interaction'
 import { CubeState } from './CubeState'
 import { Solver } from './Solver'
 import { MoveHistory } from './MoveHistory'
+import { HintEngine } from './HintEngine'
 import { HUD } from '../components/HUD'
+import { HintPanel } from '../components/HintPanel'
 import { generateScramble, scrambleToString } from './Scramble'
 import type { Move } from '../../shared/types'
 
@@ -66,9 +68,24 @@ export function createApp(): HTMLDivElement {
   // 创建操作历史
   const moveHistory = new MoveHistory()
 
+  // 创建提示引擎
+  const hintEngine = new HintEngine()
+
   // 创建 HUD
   const hud = new HUD()
   container.appendChild(hud.getContainer())
+
+  // 创建提示面板
+  const hintPanel = new HintPanel()
+  container.appendChild(hintPanel.getContainer())
+
+  // 提示按钮回调
+  hintPanel.onHint(async () => {
+    const hint = await hintEngine.getHint(cubeState, 2)
+    if (hint) {
+      hintPanel.showHint(hint)
+    }
+  })
 
   // 创建交互控制
   const interaction = new Interaction(cubeRenderer, scene, camera, renderer)
@@ -78,6 +95,7 @@ export function createApp(): HTMLDivElement {
     cubeState.applyMove(moveType)
     moveHistory.record(moveType)
     hud.incrementMoveCount()
+    hintPanel.clearHint()
     console.log('Move executed:', moveType)
     console.log('Cube solved:', cubeState.isSolved())
   })
@@ -101,6 +119,8 @@ export function createApp(): HTMLDivElement {
     hud.resetTimer()
     hud.startTimer()
     moveHistory.clear()
+    hintEngine.resetHintsUsed()
+    hintPanel.clearHint()
     
     console.log('Cube scrambled!')
   }
@@ -117,6 +137,8 @@ export function createApp(): HTMLDivElement {
     // 重置计时器、步数和历史
     hud.resetTimer()
     moveHistory.clear()
+    hintEngine.resetHintsUsed()
+    hintPanel.clearHint()
     
     console.log('Cube reset!')
   }
