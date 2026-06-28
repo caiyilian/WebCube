@@ -31,7 +31,7 @@ function generatePlayerColor(index: number): string {
 
 export class RoomManager {
   private rooms = new Map<string, Room>()
-  private playerStats = new Map<string, { elo: number; gamesPlayed: number; gamesWon: number }>()
+  private playerStats = new Map<string, { elo: number; gamesPlayed: number; gamesWon: number; bestTime: number | null; totalTime: number; history: Array<{ time: number; moves: number; date: number; won: boolean }> }>()
   private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
   constructor(io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) {
@@ -237,6 +237,29 @@ export class RoomManager {
       }
 
       this.io.to(roomId).emit('game-end', gameResult)
+
+      // Record player stats
+      const duration = solvedPlayers[0].solveTime! - room.createdAt
+      room.players.forEach((player) => {
+        const stats = this.playerStats.get(player.id) || { elo: 1200, gamesPlayed: 0, gamesWon: 0, bestTime: null, totalTime: 0, history: [] }
+        stats.gamesPlayed++
+        if (player.id === winnerId) stats.gamesWon++
+        if (player.solveTime) {
+          stats.totalTime += player.solveTime
+          if (!stats.bestTime || player.solveTime < stats.bestTime) {
+            stats.bestTime = player.solveTime
+          }
+        }
+        stats.history.push({
+          time: player.solveTime || 0,
+          moves: player.moveCount,
+          date: Date.now(),
+          won: player.id === winnerId,
+        })
+        // Keep only last 50 games
+        if (stats.history.length > 50) stats.history = stats.history.slice(-50)
+        this.playerStats.set(player.id, stats)
+      })
     }
   }
 
@@ -361,8 +384,8 @@ export class RoomManager {
     return Math.round(K * (actualScore - expectedScore))
   }
 
-  getPlayerStats(playerId: string): { elo: number; gamesPlayed: number; gamesWon: number } {
-    return this.playerStats.get(playerId) || { elo: 1200, gamesPlayed: 0, gamesWon: 0 }
+  getPlayerStats(playerId: string) {
+    return this.playerStats.get(playerId) || { elo: 1200, gamesPlayed: 0, gamesWon: 0, bestTime: null, totalTime: 0, history: [] }
   }
 
   getLeaderboard(): Array<{ id: string; elo: number; gamesPlayed: number; gamesWon: number }> {
