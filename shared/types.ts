@@ -1,5 +1,7 @@
 // Shared types between client and server
 
+export type CubeSize = 2 | 3 | 4
+
 export interface CubeState {
   U: string[]
   D: string[]
@@ -27,6 +29,7 @@ export interface RoomSettings {
   maxHints: number
   timeLimit: number | null
   chatEnabled: boolean
+  cubeSize?: CubeSize
 }
 
 export interface Room {

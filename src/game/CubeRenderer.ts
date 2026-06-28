@@ -22,6 +22,8 @@ const CUBELET_SIZE = 0.9
 const CUBELET_GAP = 0.05
 const CUBELET_STEP = CUBELET_SIZE + CUBELET_GAP
 
+export type CubeSize = 2 | 3 | 4
+
 export interface CubeletData {
   mesh: THREE.Mesh
   logicalPosition: { x: number; y: number; z: number }
@@ -32,23 +34,43 @@ export class CubeRenderer {
   public group: THREE.Group
   private isAnimating = false
   private animationDuration = 200
+  private cubeSize: CubeSize = 3
 
-  constructor() {
+  constructor(cubeSize: CubeSize = 3) {
+    this.cubeSize = cubeSize
     this.group = new THREE.Group()
     this.createCube()
   }
 
   private createCube(): void {
-    // 创建 27 个小立方体 (3x3x3)
-    for (let x = -1; x <= 1; x++) {
-      for (let y = -1; y <= 1; y++) {
-        for (let z = -1; z <= 1; z++) {
+    const half = (this.cubeSize - 1) / 2
+    // 创建 N×N×N 个小立方体
+    for (let x = -half; x <= half; x++) {
+      for (let y = -half; y <= half; y++) {
+        for (let z = -half; z <= half; z++) {
           const cubelet = this.createCubelet(x, y, z)
           this.cubelets.push(cubelet)
           this.group.add(cubelet.mesh)
         }
       }
     }
+  }
+
+  public setCubeSize(size: CubeSize): void {
+    if (size === this.cubeSize) return
+    this.cubeSize = size
+    this.recreateCube()
+  }
+
+  private recreateCube(): void {
+    // 清理旧的 cubelets
+    this.cubelets.forEach(c => {
+      c.mesh.geometry.dispose()
+      ;(c.mesh.material as THREE.Material[]).forEach(m => m.dispose())
+    })
+    this.cubelets = []
+    this.group.clear()
+    this.createCube()
   }
 
   private createCubelet(x: number, y: number, z: number): CubeletData {
@@ -74,17 +96,18 @@ export class CubeRenderer {
   }
 
   private getCubeletMaterials(x: number, y: number, z: number): THREE.Material[] {
+    const half = (this.cubeSize - 1) / 2
     // 面顺序: +x, -x, +y, -y, +z, -z (Right, Left, Up, Down, Front, Back)
     const getFaceColor = (face: 'right' | 'left' | 'up' | 'down' | 'front' | 'back'): THREE.Material => {
       let color: number = CUBE_COLORS.black
       
       switch (face) {
-        case 'right':  color = x === 1 ? CUBE_COLORS.red : CUBE_COLORS.black; break
-        case 'left':   color = x === -1 ? CUBE_COLORS.orange : CUBE_COLORS.black; break
-        case 'up':     color = y === 1 ? CUBE_COLORS.white : CUBE_COLORS.black; break
-        case 'down':   color = y === -1 ? CUBE_COLORS.yellow : CUBE_COLORS.black; break
-        case 'front':  color = z === 1 ? CUBE_COLORS.green : CUBE_COLORS.black; break
-        case 'back':   color = z === -1 ? CUBE_COLORS.blue : CUBE_COLORS.black; break
+        case 'right':  color = x === half ? CUBE_COLORS.red : CUBE_COLORS.black; break
+        case 'left':   color = x === -half ? CUBE_COLORS.orange : CUBE_COLORS.black; break
+        case 'up':     color = y === half ? CUBE_COLORS.white : CUBE_COLORS.black; break
+        case 'down':   color = y === -half ? CUBE_COLORS.yellow : CUBE_COLORS.black; break
+        case 'front':  color = z === half ? CUBE_COLORS.green : CUBE_COLORS.black; break
+        case 'back':   color = z === -half ? CUBE_COLORS.blue : CUBE_COLORS.black; break
       }
 
       return new THREE.MeshStandardMaterial({
@@ -107,6 +130,10 @@ export class CubeRenderer {
   // 获取指定层的所有 cubelet
   public getLayerCubelets(axis: 'x' | 'y' | 'z', layer: number): CubeletData[] {
     return this.cubelets.filter(c => c.logicalPosition[axis] === layer)
+  }
+
+  public getCubeSize(): CubeSize {
+    return this.cubeSize
   }
 
   // 获取整个魔方组
@@ -264,15 +291,16 @@ export class CubeRenderer {
     const faceIndex = FACE_INDEX_MAP[faceKey]
     if (faceIndex === undefined) return
 
+    const half = (this.cubeSize - 1) / 2
+    const layerValue = face === 'R' || face === 'U' || face === 'F' ? half : -half
+    const axis = face === 'R' || face === 'L' ? 'x' : face === 'U' || face === 'D' ? 'y' : 'z'
+
     // Find all cubelets on this face
-    const layerCubelets = this.getLayerCubelets(
-      face === 'R' || face === 'L' ? 'x' : face === 'U' || face === 'D' ? 'y' : 'z',
-      face === 'R' || face === 'U' || face === 'F' ? 1 : -1
-    )
+    const layerCubelets = this.getLayerCubelets(axis, layerValue)
 
     // Find the specific cubelet by row/col
-    const row = Math.floor(index / 3)
-    const col = index % 3
+    const row = Math.floor(index / this.cubeSize)
+    const col = index % this.cubeSize
 
     for (const c of layerCubelets) {
       const pos = c.logicalPosition
@@ -280,22 +308,22 @@ export class CubeRenderer {
 
       switch (face) {
         case 'R': // viewed from +X: +Z is left, +Y is up
-          matches = (pos.y === (1 - row)) && (pos.z === (1 - col))
+          matches = (pos.y === (half - row)) && (pos.z === (half - col))
           break
         case 'L': // viewed from -X: +Z is right, +Y is up
-          matches = (pos.y === (1 - row)) && (pos.z === (col - 1))
+          matches = (pos.y === (half - row)) && (pos.z === (col - half))
           break
         case 'U': // viewed from +Y: +X is right, +Z is down
-          matches = (pos.z === (row - 1)) && (pos.x === (col - 1))
+          matches = (pos.z === (row - half)) && (pos.x === (col - half))
           break
         case 'D': // viewed from -Y: +X is right, +Z is up
-          matches = (pos.z === (1 - row)) && (pos.x === (col - 1))
+          matches = (pos.z === (half - row)) && (pos.x === (col - half))
           break
         case 'F': // viewed from +Z: +X is right, +Y is up
-          matches = (pos.y === (1 - row)) && (pos.x === (col - 1))
+          matches = (pos.y === (half - row)) && (pos.x === (col - half))
           break
         case 'B': // viewed from -Z: +X is left, +Y is up
-          matches = (pos.y === (1 - row)) && (pos.x === (1 - col))
+          matches = (pos.y === (half - row)) && (pos.x === (half - col))
           break
       }
 

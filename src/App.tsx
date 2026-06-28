@@ -1,10 +1,8 @@
 import { Canvas } from './components/Canvas'
 import { HUD } from './components/HUD'
 import { Settings } from './components/Settings'
-import { useGameStore } from './stores/useGameStore'
-import { createHomePage } from './components/HomePage.js'
-
-export type GameMode = 'practice' | 'battle' | 'coop'
+import { useGameStore, CubeSize } from './stores/useGameStore'
+import { createHomePage, GameMode } from './components/HomePage.js'
 
 export function createApp() {
   const root = document.getElementById('root')
@@ -20,15 +18,17 @@ function showHomePage(root: HTMLElement) {
   root.appendChild(homePage.element)
 
   // Handle mode selection
-  homePage.onModeSelect = (mode: GameMode) => {
-    initializeGame(mode, root)
+  homePage.onModeSelect = (mode: GameMode, cubeSize: CubeSize) => {
+    initializeGame(mode, cubeSize, root)
   }
 
   // Listen for hash changes
   const handleHashChange = () => {
     const hash = window.location.hash.replace('#', '')
-    if (hash === 'practice' || hash === 'battle' || hash === 'coop') {
-      initializeGame(hash as GameMode, root)
+    const [mode, sizeStr] = hash.split('-')
+    const cubeSize = parseInt(sizeStr) as CubeSize || 3
+    if ((mode === 'practice' || mode === 'battle' || mode === 'coop') && (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)) {
+      initializeGame(mode as GameMode, cubeSize, root)
     } else {
       showHomePage(root)
     }
@@ -38,16 +38,18 @@ function showHomePage(root: HTMLElement) {
 
   // Check initial hash
   const initialHash = window.location.hash.replace('#', '')
-  if (initialHash === 'practice' || initialHash === 'battle' || initialHash === 'coop') {
-    initializeGame(initialHash as GameMode, root)
+  const [mode, sizeStr] = initialHash.split('-')
+  const cubeSize = parseInt(sizeStr) as CubeSize || 3
+  if ((mode === 'practice' || mode === 'battle' || mode === 'coop') && (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)) {
+    initializeGame(mode as GameMode, cubeSize, root)
   }
 }
 
-function initializeGame(mode: GameMode, root: HTMLElement) {
+function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
   root.innerHTML = ''
 
   // Initialize Three.js canvas
-  const canvas = new Canvas()
+  const canvas = new Canvas(cubeSize)
   root.appendChild(canvas.domElement)
 
   // Initialize HUD with mode
@@ -57,6 +59,9 @@ function initializeGame(mode: GameMode, root: HTMLElement) {
   // Initialize Settings panel
   const settings = new Settings()
   root.appendChild(settings.element)
+
+  // Set cube size in store
+  useGameStore.setCubeSize(cubeSize)
 
   // Connect HUD to store
   connectHUD(hud, settings, mode)
@@ -70,7 +75,7 @@ function initializeGame(mode: GameMode, root: HTMLElement) {
   // Expose for debugging
   ;(window as any).__WEBCUBE__ = { canvas, hud, settings, store: useGameStore }
 
-  console.log(`WebCube initialized in ${mode} mode`)
+  console.log(`WebCube initialized in ${mode} mode with ${cubeSize}x${cubeSize}x${cubeSize} cube`)
 }
 
 function connectHUD(hud: HUD, settings: Settings, mode: GameMode): void {

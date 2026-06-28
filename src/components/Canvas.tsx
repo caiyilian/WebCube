@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { CubeRenderer } from '../game/CubeRenderer.js'
+import { CubeRenderer, CubeSize } from '../game/CubeRenderer.js'
 import { Interaction } from '../game/Interaction.js'
 import { useGameStore } from '../stores/useGameStore.js'
 import { Move } from '@shared/types.js'
@@ -18,7 +18,7 @@ export class Canvas {
   private interaction: Interaction
   private unsubscribeStore: (() => void) | null = null
 
-  constructor() {
+  constructor(cubeSize: CubeSize = 3) {
     // Create canvas
     this.domElement = document.createElement('canvas')
     this.domElement.style.width = '100%'
@@ -66,7 +66,7 @@ export class Canvas {
     this.setupLights()
 
     // Initialize game components
-    this.cubeRenderer = new CubeRenderer()
+    this.cubeRenderer = new CubeRenderer(cubeSize)
     this.scene.add(this.cubeRenderer.getGroup())
 
     // Ground plane for shadows
@@ -82,6 +82,10 @@ export class Canvas {
 
     // Subscribe to store changes
     this.subscribeToStore()
+  }
+
+  public setCubeSize(size: CubeSize): void {
+    this.cubeRenderer.setCubeSize(size)
   }
 
   private setupLights(): void {
