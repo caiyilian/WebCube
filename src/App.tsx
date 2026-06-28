@@ -112,7 +112,12 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas
     // Update visible move count based on the current undo/redo cursor.
     hud.setMoveCount(Math.max(0, state.moveHistoryIndex + 1))
     hud.setSolving(state.isSolving)
+    hud.setHint(state.currentHint, state.hintLevel)
   })
+
+  if (mode !== 'practice') {
+    hud.hideHintButton()
+  }
 
   // Connect HUD callbacks
   hud.setCallbacks({

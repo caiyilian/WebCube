@@ -52,4 +52,31 @@ describe('HUD', () => {
     expect(hud.element.querySelector('.hud-status')?.textContent).toBe('')
     expect((hud.element.querySelector('[data-action="solve"]') as HTMLButtonElement).disabled).toBe(false)
   })
+
+  it('renders hints according to hint level', () => {
+    const hud = new HUD()
+    const hint = {
+      move: 'R',
+      layer: 'R',
+      direction: 'clockwise' as const,
+      description: '右面顺时针旋转',
+    }
+
+    hud.setHint(hint, 1)
+    expect(hud.element.querySelector('.hud-hint')?.textContent).toBe('')
+
+    hud.setHint(hint, 2)
+    expect(hud.element.querySelector('.hud-hint')?.textContent).toBe('↻')
+
+    hud.setHint(hint, 3)
+    expect(hud.element.querySelector('.hud-hint')?.textContent).toContain('右面顺时针旋转')
+  })
+
+  it('can hide the hint button outside practice mode', () => {
+    const hud = new HUD()
+
+    hud.hideHintButton()
+
+    expect((hud.element.querySelector('[data-action="hint"]') as HTMLButtonElement).style.display).toBe('none')
+  })
 })
