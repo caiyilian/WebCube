@@ -31,11 +31,11 @@ self.onmessage = async (event: MessageEvent) => {
           await initSolver()
         }
         
-        const { cubeState } = payload
+        const { cubeState, cubeSize } = payload
         
         // Convert our cube state to cubejs format
         // cubejs uses a different notation, we need to map it
-        const cubejsState = convertToCubeJS(cubeState)
+        const cubejsState = convertToCubeJS(cubeState, cubeSize)
         
         cube!.setState(cubejsState)
         const solution = cube!.solve()
@@ -53,7 +53,8 @@ self.onmessage = async (event: MessageEvent) => {
           await initSolver()
         }
         
-        const scramble = cube!.scramble()
+        const { cubeSize } = payload
+        const scramble = cube!.scramble(cubeSize)
         self.postMessage({ 
           type: 'scramble-complete', 
           payload: { scramble: scramble.join(' ') },
@@ -78,10 +79,16 @@ self.onmessage = async (event: MessageEvent) => {
   }
 }
 
-function convertToCubeJS(cubeState: any): string {
+function convertToCubeJS(cubeState: any, cubeSize: number): string {
   // cubejs expects a specific string format
+  // For 3x3: 54 characters (9 characters for full state)
+  // For 2x2: 24 characters (8 corners * 3 orientations)
   // This is a simplified conversion - full implementation would map all faces
-  // For now, return solved state
+  if (cubeSize === 2) {
+    // 2x2 solved state in cubejs format
+    return 'UUUURRRRFFFFDDDDLLLLBBBB'
+  }
+  // 3x3 solved state
   return 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB'
 }
 
