@@ -36,4 +36,20 @@ describe('HUD', () => {
     expect(onUndo).toHaveBeenCalledTimes(1)
     expect(onRedo).toHaveBeenCalledTimes(2)
   })
+
+  it('shows solving status and disables conflicting actions', () => {
+    const hud = new HUD()
+
+    hud.setSolving(true)
+
+    expect(hud.element.querySelector('.hud-status')?.textContent).toBe('求解中...')
+    expect((hud.element.querySelector('[data-action="solve"]') as HTMLButtonElement).disabled).toBe(true)
+    expect((hud.element.querySelector('[data-action="scramble"]') as HTMLButtonElement).disabled).toBe(true)
+    expect((hud.element.querySelector('[data-action="settings"]') as HTMLButtonElement).disabled).toBe(false)
+
+    hud.setSolving(false)
+
+    expect(hud.element.querySelector('.hud-status')?.textContent).toBe('')
+    expect((hud.element.querySelector('[data-action="solve"]') as HTMLButtonElement).disabled).toBe(false)
+  })
 })

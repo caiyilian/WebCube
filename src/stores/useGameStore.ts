@@ -328,7 +328,7 @@ class Store {
     }
   }
 
-  async autoSolve(): Promise<void> {
+  async autoSolve(onSolutionMove?: (move: Move) => Promise<void> | void): Promise<void> {
     if (this.state.isSolving) return
     const { cubeState, cubeSize, moveHistory, moveHistoryIndex } = this.state
     const activeHistory = moveHistory.slice(0, moveHistoryIndex + 1)
@@ -338,10 +338,21 @@ class Store {
     try {
       const result = await solveCubeWithWorker({ cubeState, cubeSize, moveHistory: activeHistory })
       let solvedState = cubeState
-      for (const move of result.moves) solvedState = applyMoveToState(solvedState, move, cubeSize)
+      const newHistory = [...activeHistory]
+
+      for (const move of result.moves) {
+        await onSolutionMove?.(move)
+        solvedState = applyMoveToState(solvedState, move, cubeSize)
+        newHistory.push(move)
+        this.setState({
+          cubeState: solvedState,
+          isSolved: checkSolved(solvedState),
+          moveHistory: [...newHistory],
+          moveHistoryIndex: newHistory.length - 1,
+        })
+      }
 
       const solved = checkSolved(solvedState)
-      const newHistory = [...activeHistory, ...result.moves]
       this.setState({
         cubeState: solvedState,
         isSolved: solved,

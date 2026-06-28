@@ -111,6 +111,7 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas
 
     // Update visible move count based on the current undo/redo cursor.
     hud.setMoveCount(Math.max(0, state.moveHistoryIndex + 1))
+    hud.setSolving(state.isSolving)
   })
 
   // Connect HUD callbacks
@@ -123,7 +124,7 @@ function connectHUD(hud: HUD, settings: Settings, mode: GameMode, canvas: Canvas
       canvas.resetCube()
     },
     onSolve: () => {
-      useGameStore.autoSolve()
+      void useGameStore.autoSolve((move) => canvas.animateMove(move))
     },
     onHint: () => {
       const store = useGameStore
