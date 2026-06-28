@@ -13,6 +13,7 @@ const MODE_CONFIG: Record<GameMode, { maxPlayers: number; hintEnabled: boolean }
   practice: { maxPlayers: 1, hintEnabled: true },
   '1v1': { maxPlayers: 2, hintEnabled: false },
   coop: { maxPlayers: 4, hintEnabled: false },
+  cfop: { maxPlayers: 1, hintEnabled: true },
 }
 
 function generateRoomId(): string {

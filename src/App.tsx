@@ -4,6 +4,7 @@ import { Settings } from './components/Settings'
 import { useGameStore, CubeSize } from './stores/useGameStore'
 import { createHomePage } from './components/HomePage.js'
 import { createRoomPage } from './components/RoomPage'
+import { createCFOPTrainingPanel } from './components/CFOPTrainingPanel'
 import { exposeWebCubeDebugState } from './debug/webcubeDebug'
 import type { GameMode } from '../shared/types'
 
@@ -22,6 +23,10 @@ export function normalizeGameRoute(hash: string): GameRoute | null {
     (mode === 'practice' || mode === '1v1' || mode === 'coop') &&
     (cubeSize === 2 || cubeSize === 3 || cubeSize === 4)
   ) {
+    return { mode, cubeSize }
+  }
+
+  if (mode === 'cfop' && cubeSize === 3) {
     return { mode, cubeSize }
   }
 
@@ -66,7 +71,7 @@ function showHomePage(root: HTMLElement) {
 }
 
 function showRoute(route: GameRoute, root: HTMLElement): void {
-  if (route.mode === 'practice') {
+  if (route.mode === 'practice' || route.mode === 'cfop') {
     initializeGame(route.mode, route.cubeSize, root)
     return
   }
@@ -98,6 +103,9 @@ function initializeGame(mode: GameMode, cubeSize: CubeSize, root: HTMLElement) {
   // Initialize Settings panel
   const settings = new Settings()
   root.appendChild(settings.element)
+
+  const cfopPanel = mode === 'cfop' ? createCFOPTrainingPanel() : null
+  if (cfopPanel) root.appendChild(cfopPanel.element)
 
   // Set cube size in store
   useGameStore.setCubeSize(cubeSize)
