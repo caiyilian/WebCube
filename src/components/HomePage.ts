@@ -32,6 +32,12 @@ export function createHomePage(): HomePage {
           <div class="home-mode-title">练习模式</div>
           <div class="home-mode-desc">单人练习，支持 AI 提示</div>
         </button>
+
+        <button class="home-mode-card" data-mode="cfop">
+          <div class="home-mode-icon">CFOP</div>
+          <div class="home-mode-title">CFOP 训练</div>
+          <div class="home-mode-desc">3×3 进阶训练，跟踪 Cross / F2L / OLL / PLL</div>
+        </button>
         
         <button class="home-mode-card" data-mode="1v1">
           <div class="home-mode-icon">⚔️</div>
@@ -74,7 +80,7 @@ export function createHomePage(): HomePage {
   container.querySelectorAll('.home-mode-card').forEach(card => {
     card.addEventListener('click', () => {
       const mode = (card as HTMLElement).dataset.mode as GameMode
-      homePage.onModeSelect(mode, selectedCubeSize)
+      homePage.onModeSelect(mode, mode === 'cfop' ? 3 : selectedCubeSize)
     })
   })
 
