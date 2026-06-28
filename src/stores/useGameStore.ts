@@ -83,66 +83,35 @@ function applyMoveToState(state: CubeState, move: Move, cubeSize: CubeSize): Cub
     newState[face] = rotated
   }
 
-  // Adjacent face strips for 3x3 (simplified - for 2x2 and 4x4 we'd need different logic)
-  // For now, keep 3x3 logic as default, 2x2 uses same face indices but different adjacency
-  if (cubeSize === 3) {
-    const adjMap: Record<string, { face: keyof CubeState; indices: number[] }[]> = {
-      R: [{ face: 'U', indices: [2, 5, 8] }, { face: 'F', indices: [2, 5, 8] }, { face: 'D', indices: [2, 5, 8] }, { face: 'B', indices: [6, 3, 0] }],
-      L: [{ face: 'U', indices: [0, 3, 6] }, { face: 'B', indices: [8, 5, 2] }, { face: 'D', indices: [0, 3, 6] }, { face: 'F', indices: [0, 3, 6] }],
-      U: [{ face: 'B', indices: [0, 1, 2] }, { face: 'R', indices: [0, 1, 2] }, { face: 'F', indices: [0, 1, 2] }, { face: 'L', indices: [0, 1, 2] }],
-      D: [{ face: 'F', indices: [6, 7, 8] }, { face: 'R', indices: [6, 7, 8] }, { face: 'B', indices: [6, 7, 8] }, { face: 'L', indices: [6, 7, 8] }],
-      F: [{ face: 'U', indices: [6, 7, 8] }, { face: 'R', indices: [0, 3, 6] }, { face: 'D', indices: [2, 1, 0] }, { face: 'L', indices: [8, 5, 2] }],
-      B: [{ face: 'U', indices: [2, 1, 0] }, { face: 'L', indices: [0, 3, 6] }, { face: 'D', indices: [6, 7, 8] }, { face: 'R', indices: [8, 5, 2] }],
-    }
-
-    const adjacents = adjMap[face]
-    if (adjacents) {
-      const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
-      if (direction === 1) {
-        const last = strips[strips.length - 1]
-        for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
-        strips[0] = last
-      } else {
-        const first = strips[0]
-        for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
-        strips[strips.length - 1] = first
-      }
-      adjacents.forEach((a, idx) => {
-        a.indices.forEach((faceIdx, stripIdx) => {
-          newState[a.face][faceIdx] = strips[idx][stripIdx]
-        })
-      })
-    }
-  } else if (cubeSize === 2) {
-    // 2x2 adjacency - only corners, no edges
-    const adjMap2: Record<string, { face: keyof CubeState; indices: number[] }[]> = {
-      R: [{ face: 'U', indices: [1, 3] }, { face: 'F', indices: [1, 3] }, { face: 'D', indices: [1, 3] }, { face: 'B', indices: [2, 0] }],
-      L: [{ face: 'U', indices: [0, 2] }, { face: 'B', indices: [3, 1] }, { face: 'D', indices: [0, 2] }, { face: 'F', indices: [0, 2] }],
-      U: [{ face: 'B', indices: [0, 1] }, { face: 'R', indices: [0, 1] }, { face: 'F', indices: [0, 1] }, { face: 'L', indices: [0, 1] }],
-      D: [{ face: 'F', indices: [2, 3] }, { face: 'R', indices: [2, 3] }, { face: 'B', indices: [2, 3] }, { face: 'L', indices: [2, 3] }],
-      F: [{ face: 'U', indices: [2, 3] }, { face: 'R', indices: [0, 2] }, { face: 'D', indices: [1, 0] }, { face: 'L', indices: [3, 1] }],
-      B: [{ face: 'U', indices: [1, 0] }, { face: 'L', indices: [0, 2] }, { face: 'D', indices: [2, 3] }, { face: 'R', indices: [3, 1] }],
-    }
-
-    const adjacents = adjMap2[face]
-    if (adjacents) {
-      const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
-      if (direction === 1) {
-        const last = strips[strips.length - 1]
-        for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
-        strips[0] = last
-      } else {
-        const first = strips[0]
-        for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
-        strips[strips.length - 1] = first
-      }
-      adjacents.forEach((a, idx) => {
-        a.indices.forEach((faceIdx, stripIdx) => {
-          newState[a.face][faceIdx] = strips[idx][stripIdx]
-        })
-      })
-    }
+  const row = (r: number) => Array.from({ length: n }, (_, c) => r * n + c)
+  const col = (c: number) => Array.from({ length: n }, (_, r) => r * n + c)
+  const reverse = (indices: number[]) => [...indices].reverse()
+  const last = n - 1
+  const adjMap: Record<Move['face'], { face: keyof CubeState; indices: number[] }[]> = {
+    R: [{ face: 'U', indices: col(last) }, { face: 'F', indices: col(last) }, { face: 'D', indices: col(last) }, { face: 'B', indices: reverse(col(0)) }],
+    L: [{ face: 'U', indices: col(0) }, { face: 'B', indices: reverse(col(last)) }, { face: 'D', indices: col(0) }, { face: 'F', indices: col(0) }],
+    U: [{ face: 'B', indices: row(0) }, { face: 'R', indices: row(0) }, { face: 'F', indices: row(0) }, { face: 'L', indices: row(0) }],
+    D: [{ face: 'F', indices: row(last) }, { face: 'R', indices: row(last) }, { face: 'B', indices: row(last) }, { face: 'L', indices: row(last) }],
+    F: [{ face: 'U', indices: row(last) }, { face: 'R', indices: col(0) }, { face: 'D', indices: reverse(row(0)) }, { face: 'L', indices: reverse(col(last)) }],
+    B: [{ face: 'U', indices: reverse(row(0)) }, { face: 'L', indices: col(0) }, { face: 'D', indices: row(last) }, { face: 'R', indices: reverse(col(last)) }],
   }
+
+  const adjacents = adjMap[face]
+  const strips = adjacents.map((a) => a.indices.map((i) => newState[a.face][i]))
+  if (direction === 1) {
+    const lastStrip = strips[strips.length - 1]
+    for (let i = strips.length - 1; i > 0; i--) strips[i] = strips[i - 1]
+    strips[0] = lastStrip
+  } else {
+    const firstStrip = strips[0]
+    for (let i = 0; i < strips.length - 1; i++) strips[i] = strips[i + 1]
+    strips[strips.length - 1] = firstStrip
+  }
+  adjacents.forEach((a, idx) => {
+    a.indices.forEach((faceIdx, stripIdx) => {
+      newState[a.face][faceIdx] = strips[idx][stripIdx]
+    })
+  })
 
   return newState
 }

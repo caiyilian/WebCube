@@ -44,6 +44,36 @@ describe('useGameStore', () => {
       const newState = JSON.stringify(useGameStore.getState().cubeState)
       expect(newState).not.toBe(initialState)
     })
+
+    it.each([2, 3, 4] as const)('should undo a face move with its inverse for %ix%i', (size) => {
+      useGameStore.setCubeSize(size)
+      const initialState = JSON.stringify(useGameStore.getState().cubeState)
+
+      useGameStore.applyMove({ face: 'R', direction: 1 })
+      useGameStore.applyMove({ face: 'R', direction: -1 })
+
+      expect(JSON.stringify(useGameStore.getState().cubeState)).toBe(initialState)
+      expect(useGameStore.getState().isSolved).toBe(true)
+    })
+
+    it.each([2, 3, 4] as const)('should return to solved after four same-face turns for %ix%i', (size) => {
+      useGameStore.setCubeSize(size)
+      const initialState = JSON.stringify(useGameStore.getState().cubeState)
+
+      for (let i = 0; i < 4; i++) useGameStore.applyMove({ face: 'F', direction: 1 })
+
+      expect(JSON.stringify(useGameStore.getState().cubeState)).toBe(initialState)
+      expect(useGameStore.getState().isSolved).toBe(true)
+    })
+
+    it('should update adjacent strips for 4x4 face turns', () => {
+      useGameStore.setCubeSize(4)
+
+      useGameStore.applyMove({ face: 'R', direction: 1 })
+
+      expect(useGameStore.getState().cubeState.U).not.toEqual(Array(16).fill('white'))
+      expect(useGameStore.getState().isSolved).toBe(false)
+    })
   })
 
   describe('undo/redo', () => {
