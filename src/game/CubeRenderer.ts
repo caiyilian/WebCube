@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 import { CubeState } from '@shared/types.js'
 
+// Face index in BoxGeometry material array: 0=+x(R), 1=-x(L), 2=+y(U), 3=-y(D), 4=+z(F), 5=-z(B)
+const FACE_INDEX_MAP: Record<string, number> = {
+  R: 0, L: 1, U: 2, D: 3, F: 4, B: 5,
+}
+
 // 魔方颜色定义
 export const CUBE_COLORS = {
   white: 0xffffff,   // U (Up)
@@ -218,6 +223,102 @@ export class CubeRenderer {
         } else {
           ;(mat as THREE.MeshStandardMaterial).emissive.setHex(0x000000)
           ;(mat as THREE.MeshStandardMaterial).emissiveIntensity = 0
+        }
+      })
+    })
+  }
+
+  // 直接高亮某个网格的某个面
+  public selectMeshFace(mesh: THREE.Mesh, face: string): void {
+    this.clearSelection()
+    const faceKey = face as keyof typeof FACE_INDEX_MAP
+    const faceIndex = FACE_INDEX_MAP[faceKey]
+    if (faceIndex === undefined) return
+
+    const materials = mesh.material as THREE.Material[]
+    if (materials && materials[faceIndex]) {
+      const mat = materials[faceIndex]
+      if (mat instanceof THREE.MeshStandardMaterial) {
+        mat.emissive.setHex(0x00ff00)
+        mat.emissiveIntensity = 0.8
+      }
+    }
+  }
+
+  // Directly highlight the material hit by the raycaster.
+  public selectMeshMaterial(mesh: THREE.Mesh, materialIndex: number): void {
+    this.clearSelection()
+
+    const materials = mesh.material as THREE.Material[]
+    const mat = materials[materialIndex]
+    if (mat instanceof THREE.MeshStandardMaterial) {
+      mat.emissive.setHex(0x00ff00)
+      mat.emissiveIntensity = 0.8
+    }
+  }
+
+  // 选中某个面的某个贴纸（保留用于兼容）
+  public selectSticker(face: string, index: number, _uv?: THREE.Vector2): void {
+    this.clearSelection()
+    const faceKey = face as keyof typeof FACE_INDEX_MAP
+    const faceIndex = FACE_INDEX_MAP[faceKey]
+    if (faceIndex === undefined) return
+
+    // Find all cubelets on this face
+    const layerCubelets = this.getLayerCubelets(
+      face === 'R' || face === 'L' ? 'x' : face === 'U' || face === 'D' ? 'y' : 'z',
+      face === 'R' || face === 'U' || face === 'F' ? 1 : -1
+    )
+
+    // Find the specific cubelet by row/col
+    const row = Math.floor(index / 3)
+    const col = index % 3
+
+    for (const c of layerCubelets) {
+      const pos = c.logicalPosition
+      let matches = false
+
+      switch (face) {
+        case 'R': // viewed from +X: +Z is left, +Y is up
+          matches = (pos.y === (1 - row)) && (pos.z === (1 - col))
+          break
+        case 'L': // viewed from -X: +Z is right, +Y is up
+          matches = (pos.y === (1 - row)) && (pos.z === (col - 1))
+          break
+        case 'U': // viewed from +Y: +X is right, +Z is down
+          matches = (pos.z === (row - 1)) && (pos.x === (col - 1))
+          break
+        case 'D': // viewed from -Y: +X is right, +Z is up
+          matches = (pos.z === (1 - row)) && (pos.x === (col - 1))
+          break
+        case 'F': // viewed from +Z: +X is right, +Y is up
+          matches = (pos.y === (1 - row)) && (pos.x === (col - 1))
+          break
+        case 'B': // viewed from -Z: +X is left, +Y is up
+          matches = (pos.y === (1 - row)) && (pos.x === (1 - col))
+          break
+      }
+
+      if (matches) {
+        const materials = c.mesh.material as THREE.Material[]
+        const mat = materials[faceIndex]
+        if (mat && mat instanceof THREE.MeshStandardMaterial) {
+          mat.emissive.setHex(0x00ff00)
+          mat.emissiveIntensity = 0.8
+        }
+        break
+      }
+    }
+  }
+
+  // 清除选中
+  public clearSelection(): void {
+    this.cubelets.forEach(c => {
+      const materials = c.mesh.material as THREE.Material[]
+      materials.forEach(mat => {
+        if (mat instanceof THREE.MeshStandardMaterial) {
+          mat.emissive.setHex(0x000000)
+          mat.emissiveIntensity = 0
         }
       })
     })
