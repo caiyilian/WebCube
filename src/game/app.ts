@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CubeRenderer } from './CubeRenderer'
+import { Interaction } from './Interaction'
 
 export function createApp(): HTMLDivElement {
   const container = document.createElement('div')
@@ -49,6 +50,12 @@ export function createApp(): HTMLDivElement {
   // 创建魔方
   const cubeRenderer = new CubeRenderer()
   scene.add(cubeRenderer.getGroup())
+
+  // 创建交互控制
+  const interaction = new Interaction(cubeRenderer, scene, camera, renderer)
+  interaction.onMove((move) => {
+    console.log('Move executed:', move)
+  })
 
   // 动画循环
   function animate() {
