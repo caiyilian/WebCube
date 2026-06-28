@@ -1,16 +1,17 @@
 ## 目标
-搭建 Express + Socket.IO 服务端，支持 WebSocket 连接。
+实现房间创建、加入、离开的 Socket.IO 事件处理。
 
 ## 验收目标
-- 服务端启动后可接收 WebSocket 连接
-- 基本事件收发正常（connection、disconnect、自定义事件）
-- 支持 CORS（前端开发服务器跨域访问）
+- 客户端可创建房间（6位码）
+- 其他客户端可通过房间号加入
+- 客户端可离开房间
+- 房间内玩家列表实时更新
 
 ## 关联章节
 - 方案.md 第五节：多人联机方案
 
 ## 技术要点
-1. Express HTTP 服务 + Socket.IO 集成
-2. 基本事件：connection、disconnect、create-room、join-room
-3. CORS 配置允许前端 dev server 访问
-4. 端口 3000
+1. Socket.IO 事件：create-room、join-room、leave-room
+2. 房间状态广播：player-joined、player-left
+3. 房间满员检查
+4. 断线自动离开
