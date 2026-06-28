@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { CubeRenderer } from './CubeRenderer.js'
-import { Move } from '@shared/types.js'
+import { Move, MoveFace } from '@shared/types.js'
+
+type Axis = 'x' | 'y' | 'z'
 
 export class Interaction {
   private renderer: CubeRenderer
@@ -10,6 +12,8 @@ export class Interaction {
 
   // Selection
   private selectedFace: 'R' | 'L' | 'U' | 'D' | 'F' | 'B' | null = null
+  private selectedStickerPosition: THREE.Vector3 | null = null
+  private selectedFaceNormal: THREE.Vector3 | null = null
 
   // Orbit tracking
   private isOrbiting = false
@@ -127,11 +131,16 @@ export class Interaction {
     }
 
     this.selectedFace = face
+    this.selectedStickerPosition = new THREE.Vector3()
+    hit.object.getWorldPosition(this.selectedStickerPosition)
+    this.selectedFaceNormal = normal.normalize()
     this.renderer.selectMeshMaterial(hit.object, hit.face.materialIndex)
   }
 
   private clearSelection(): void {
     this.selectedFace = null
+    this.selectedStickerPosition = null
+    this.selectedFaceNormal = null
     this.renderer.clearSelection()
   }
 
@@ -140,20 +149,156 @@ export class Interaction {
     if (!this.selectedFace) return
 
     const key = event.key.toLowerCase()
-    const shift = event.shiftKey
-    const face = this.selectedFace
-    const direction: 1 | -1 = shift ? -1 : 1
+    const keyDirection = this.getKeyDirection(key)
+    if (!keyDirection) return
 
-    // Arrow keys and WASD rotate the selected face
-    if (key === 'arrowup' || key === 'w') {
-      this.onMove({ face, direction })
-    } else if (key === 'arrowdown' || key === 's') {
-      this.onMove({ face, direction: -direction as 1 | -1 })
-    } else if (key === 'arrowleft' || key === 'a') {
-      this.onMove({ face, direction: -direction as 1 | -1 })
-    } else if (key === 'arrowright' || key === 'd') {
-      this.onMove({ face, direction })
+    const move = this.getMoveForKey(keyDirection, event.shiftKey)
+    if (!move) return
+
+    this.updateSelectionFromMove(move)
+    this.onMove(move)
+  }
+
+  private getKeyDirection(key: string): THREE.Vector2 | null {
+    if (key === 'arrowup' || key === 'w') return new THREE.Vector2(0, 1)
+    if (key === 'arrowdown' || key === 's') return new THREE.Vector2(0, -1)
+    if (key === 'arrowleft' || key === 'a') return new THREE.Vector2(-1, 0)
+    if (key === 'arrowright' || key === 'd') return new THREE.Vector2(1, 0)
+    return null
+  }
+
+  private getMoveForKey(keyDirection: THREE.Vector2, invert: boolean): Move | null {
+    if (!this.selectedFace || !this.selectedStickerPosition || !this.selectedFaceNormal) {
+      return null
     }
+
+    if (keyDirection.x !== 0) {
+      const baseMove = { face: this.selectedFace }
+      const direction = this.chooseDirection(baseMove, ({ delta }) => {
+        const screenDelta = this.projectedScreenDelta(this.selectedStickerPosition!, delta)
+        return screenDelta.dot(keyDirection)
+      })
+      return { face: this.selectedFace, direction: invert ? (-direction as 1 | -1) : direction }
+    }
+
+    const axis = this.getHorizontalAxisForSelectedFace()
+    const layer = this.getLayerForAxis(axis)
+    const face = this.faceFromAxisLayer(axis, layer)
+    const desired = keyDirection.y > 0
+      ? this.selectedFaceNormal.clone().negate()
+      : this.selectedFaceNormal.clone()
+    const baseMove = { face, axis, layer }
+    const direction = this.chooseDirection(baseMove, ({ delta }) => delta.dot(desired))
+
+    return {
+      face,
+      axis,
+      layer,
+      direction: invert ? (-direction as 1 | -1) : direction,
+    }
+  }
+
+  private projectedScreenDelta(origin: THREE.Vector3, delta: THREE.Vector3): THREE.Vector2 {
+    const start = origin.clone().project(this.camera)
+    const end = origin.clone().add(delta).project(this.camera)
+    return new THREE.Vector2(end.x - start.x, end.y - start.y).normalize()
+  }
+
+  private chooseDirection(
+    move: Pick<Move, 'face' | 'axis' | 'layer'>,
+    score: (result: { delta: THREE.Vector3; normal: THREE.Vector3 }) => number
+  ): 1 | -1 {
+    const positive = this.simulateMove(move, 1)
+    const negative = this.simulateMove(move, -1)
+    return score(positive) >= score(negative) ? 1 : -1
+  }
+
+  private simulateMove(
+    move: Pick<Move, 'face' | 'axis' | 'layer'>,
+    direction: 1 | -1
+  ): { position: THREE.Vector3; delta: THREE.Vector3; normal: THREE.Vector3 } {
+    const axis = move.axis ?? this.axisFromFace(move.face)
+    const layer = move.layer ?? this.layerFromFace(move.face)
+    const axisVector = this.axisVector(axis)
+    const renderDirection = layer >= 0 ? -direction : direction
+    const rotation = new THREE.Matrix4().makeRotationAxis(axisVector, renderDirection * Math.PI / 2)
+    const position = this.selectedStickerPosition!.clone().applyMatrix4(rotation)
+    const normal = this.selectedFaceNormal!.clone().applyMatrix4(rotation).normalize()
+
+    return {
+      position,
+      delta: position.clone().sub(this.selectedStickerPosition!),
+      normal,
+    }
+  }
+
+  private updateSelectionFromMove(move: Move): void {
+    if (!this.selectedStickerPosition || !this.selectedFaceNormal) return
+
+    const result = this.simulateMove(move, move.direction)
+    this.selectedStickerPosition.copy(result.position)
+    this.selectedFaceNormal.copy(result.normal)
+    this.selectedFace = this.faceFromNormal(result.normal)
+  }
+
+  private getHorizontalAxisForSelectedFace(): Axis {
+    const cameraRight = new THREE.Vector3()
+    const matrix = this.camera.matrixWorld.elements
+    cameraRight.set(matrix[0], matrix[1], matrix[2]).normalize()
+
+    const faceRight = cameraRight
+      .sub(this.selectedFaceNormal!.clone().multiplyScalar(cameraRight.dot(this.selectedFaceNormal!)))
+      .normalize()
+
+    return this.dominantAxis(faceRight)
+  }
+
+  private getLayerForAxis(axis: Axis): number {
+    return this.toLayer(this.selectedStickerPosition![axis])
+  }
+
+  private toLayer(value: number): number {
+    if (value > 0.35) return 1
+    if (value < -0.35) return -1
+    return 0
+  }
+
+  private dominantAxis(vector: THREE.Vector3): Axis {
+    const absX = Math.abs(vector.x)
+    const absY = Math.abs(vector.y)
+    const absZ = Math.abs(vector.z)
+    if (absX >= absY && absX >= absZ) return 'x'
+    if (absY >= absX && absY >= absZ) return 'y'
+    return 'z'
+  }
+
+  private axisVector(axis: Axis): THREE.Vector3 {
+    if (axis === 'x') return new THREE.Vector3(1, 0, 0)
+    if (axis === 'y') return new THREE.Vector3(0, 1, 0)
+    return new THREE.Vector3(0, 0, 1)
+  }
+
+  private axisFromFace(face: MoveFace): Axis {
+    if (face === 'R' || face === 'L') return 'x'
+    if (face === 'U' || face === 'D') return 'y'
+    return 'z'
+  }
+
+  private layerFromFace(face: MoveFace): number {
+    return face === 'R' || face === 'U' || face === 'F' ? 1 : -1
+  }
+
+  private faceFromAxisLayer(axis: Axis, layer: number): MoveFace {
+    if (axis === 'x') return layer >= 0 ? 'R' : 'L'
+    if (axis === 'y') return layer >= 0 ? 'U' : 'D'
+    return layer >= 0 ? 'F' : 'B'
+  }
+
+  private faceFromNormal(normal: THREE.Vector3): MoveFace {
+    const axis = this.dominantAxis(normal)
+    if (axis === 'x') return normal.x >= 0 ? 'R' : 'L'
+    if (axis === 'y') return normal.y >= 0 ? 'U' : 'D'
+    return normal.z >= 0 ? 'F' : 'B'
   }
 
   public dispose(): void {
