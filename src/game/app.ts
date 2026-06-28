@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CubeRenderer } from './CubeRenderer'
 import { Interaction } from './Interaction'
+import { CubeState } from './CubeState'
+import type { Move } from '../../shared/types'
 
 export function createApp(): HTMLDivElement {
   const container = document.createElement('div')
@@ -51,10 +53,17 @@ export function createApp(): HTMLDivElement {
   const cubeRenderer = new CubeRenderer()
   scene.add(cubeRenderer.getGroup())
 
+  // 创建逻辑状态
+  const cubeState = new CubeState()
+
   // 创建交互控制
   const interaction = new Interaction(cubeRenderer, scene, camera, renderer)
   interaction.onMove((move) => {
-    console.log('Move executed:', move)
+    // 将交互操作转换为 Move 类型
+    const moveType = formatMove(move.axis, move.layer, move.direction)
+    cubeState.applyMove(moveType)
+    console.log('Move executed:', moveType)
+    console.log('Cube solved:', cubeState.isSolved())
   })
 
   // 动画循环
@@ -73,4 +82,19 @@ export function createApp(): HTMLDivElement {
   })
 
   return container
+}
+
+// 格式化操作为 Move 类型
+function formatMove(axis: string, layer: number, direction: number): Move {
+  const face = getFaceFromAxis(axis, layer)
+  const isCounterClockwise = direction === -1
+  return `${face}${isCounterClockwise ? "'" : ''}` as Move
+}
+
+// 根据轴和层获取面
+function getFaceFromAxis(axis: string, layer: number): string {
+  if (axis === 'x') return layer === 1 ? 'R' : 'L'
+  if (axis === 'y') return layer === 1 ? 'U' : 'D'
+  if (axis === 'z') return layer === 1 ? 'F' : 'B'
+  return 'R'
 }
