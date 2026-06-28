@@ -32,6 +32,7 @@ function generatePlayerColor(index: number): string {
 export class RoomManager {
   private rooms = new Map<string, Room>()
   private playerStats = new Map<string, { elo: number; gamesPlayed: number; gamesWon: number; bestTime: number | null; totalTime: number; history: Array<{ time: number; moves: number; date: number; won: boolean }> }>()
+  private chatHistory = new Map<string, Array<{ id: string; playerId: string; playerName: string; playerColor: string; message: string; timestamp: number }>>()
   private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
   constructor(io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) {
@@ -393,5 +394,16 @@ export class RoomManager {
       .map(([id, stats]) => ({ id, ...stats }))
       .sort((a, b) => b.elo - a.elo)
       .slice(0, 100)
+  }
+
+  addChatMessage(roomId: string, message: { id: string; playerId: string; playerName: string; playerColor: string; message: string; timestamp: number }): void {
+    const history = this.chatHistory.get(roomId) || []
+    history.push(message)
+    if (history.length > 50) history.shift() // Keep last 50 messages
+    this.chatHistory.set(roomId, history)
+  }
+
+  getChatHistory(roomId: string): Array<{ id: string; playerId: string; playerName: string; playerColor: string; message: string; timestamp: number }> {
+    return this.chatHistory.get(roomId) || []
   }
 }

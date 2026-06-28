@@ -169,6 +169,7 @@ io.on('connection', (socket) => {
         message,
         timestamp: Date.now(),
       }
+      roomManager.addChatMessage(roomId, chatMessage)
       io.to(roomId).emit('chat-message', chatMessage)
     }
   })
