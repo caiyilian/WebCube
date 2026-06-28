@@ -52,6 +52,37 @@ export class Interaction {
     canvas.addEventListener('mousedown', this.onMouseDown.bind(this))
     canvas.addEventListener('mousemove', this.onMouseMove.bind(this))
     canvas.addEventListener('mouseup', this.onMouseUp.bind(this))
+    
+    // 键盘事件
+    window.addEventListener('keydown', this.onKeyDown.bind(this))
+  }
+
+  // 键盘映射: R/L/U/D/F/B → 旋转对应层
+  private keyMoveMap: Record<string, { axis: MoveAxis; layer: number; direction: MoveDirection }> = {
+    'r': { axis: 'x', layer: 1, direction: 1 },     // R: 右面顺时针
+    'l': { axis: 'x', layer: -1, direction: -1 },   // L: 左面顺时针
+    'u': { axis: 'y', layer: 1, direction: 1 },     // U: 上面顺时针
+    'd': { axis: 'y', layer: -1, direction: -1 },   // D: 下面顺时针
+    'f': { axis: 'z', layer: 1, direction: 1 },     // F: 前面顺时针
+    'b': { axis: 'z', layer: -1, direction: -1 },   // B: 后面顺时针
+  }
+
+  private onKeyDown(event: KeyboardEvent): void {
+    const key = event.key.toLowerCase()
+    const shiftPressed = event.shiftKey
+    
+    if (this.keyMoveMap[key]) {
+      const moveConfig = this.keyMoveMap[key]
+      const direction = shiftPressed ? -moveConfig.direction as MoveDirection : moveConfig.direction
+      
+      const move: Move = {
+        axis: moveConfig.axis,
+        layer: moveConfig.layer,
+        direction
+      }
+      
+      this.executeMove(move)
+    }
   }
 
   private onMouseDown(event: MouseEvent): void {
