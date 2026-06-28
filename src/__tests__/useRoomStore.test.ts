@@ -170,4 +170,40 @@ describe('useRoomStore', () => {
     expect(socket.emitted).toContainEqual({ event: 'set-ready', args: [true] })
     expect(socket.emitted).toContainEqual({ event: 'start-game', args: [] })
   })
+
+  it('tracks coop turn mode and blocks non-current player moves locally', () => {
+    const socket = new FakeSocket()
+    socket.id = 'p2'
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+    const teammate: Player = { ...player, id: 'p2', name: 'Teammate', isHost: false }
+
+    useRoomStore.attachClient(client)
+    useRoomStore.connect()
+    socket.trigger('room-joined', { ...room, mode: 'coop', players: [player, teammate], turnMode: true, currentTurn: 'p1' })
+    useRoomStore.sendCoopMove({ face: 'R', direction: 1 })
+
+    expect(useRoomStore.getState().error).toBe('轮流模式下还没轮到你')
+    expect(socket.emitted).not.toContainEqual({ event: 'coop-move', args: [{ face: 'R', direction: 1 }] })
+
+    socket.trigger('turn-changed', 'p2')
+    useRoomStore.sendCoopMove({ face: 'R', direction: 1 })
+    useRoomStore.setTurnMode(false)
+
+    expect(socket.emitted).toContainEqual({ event: 'coop-move', args: [{ face: 'R', direction: 1 }] })
+    expect(socket.emitted).toContainEqual({ event: 'set-turn-mode', args: [false] })
+  })
+
+  it('applies turn mode socket events', () => {
+    const socket = new FakeSocket()
+    const client = new RoomClient('http://localhost:3000', () => socket as unknown as RoomSocket)
+
+    useRoomStore.attachClient(client)
+    useRoomStore.connect()
+    socket.trigger('turn-mode-changed', true, 'p1')
+    socket.trigger('turn-error', '只有房主可以切换轮流规则')
+
+    expect(useRoomStore.getState().turnMode).toBe(true)
+    expect(useRoomStore.getState().currentTurn).toBe('p1')
+    expect(useRoomStore.getState().error).toBe('只有房主可以切换轮流规则')
+  })
 })

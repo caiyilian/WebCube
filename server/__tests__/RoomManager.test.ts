@@ -155,4 +155,45 @@ describe('RoomManager', () => {
       })
     })
   })
+
+  describe('coop turn mode', () => {
+    it('allows only the host to switch turn mode', () => {
+      const roomId = roomManager.createRoom({
+        mode: 'coop',
+        host: 'player1',
+        settings: {},
+      })
+      roomManager.joinRoom(roomId, {
+        id: 'player1',
+        name: 'Player 1',
+        color: '#ff0000',
+        isHost: true,
+        isReady: false,
+        moveCount: 0,
+        solveTime: null,
+        hintsUsed: 0,
+      })
+      roomManager.joinRoom(roomId, {
+        id: 'player2',
+        name: 'Player 2',
+        color: '#00ff00',
+        isHost: false,
+        isReady: false,
+        moveCount: 0,
+        solveTime: null,
+        hintsUsed: 0,
+      })
+
+      expect(roomManager.setTurnModeForPlayer(roomId, 'player2', true)).toMatchObject({ ok: false })
+      expect(roomManager.setTurnModeForPlayer(roomId, 'player1', true)).toMatchObject({
+        ok: true,
+        currentTurn: 'player1',
+      })
+      expect(roomManager.getRoom(roomId)?.turnMode).toBe(true)
+      expect(roomManager.setTurnModeForPlayer(roomId, 'player1', false)).toMatchObject({
+        ok: true,
+        currentTurn: null,
+      })
+    })
+  })
 })

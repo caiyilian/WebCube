@@ -65,6 +65,13 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
           <strong data-room-code>------</strong>
         </div>
         <div class="room-game-state" data-game-state></div>
+        <div class="room-coop-controls" data-coop-controls hidden>
+          <div class="room-turn-status" data-turn-status></div>
+          <div class="room-mode-toggle">
+            <button class="room-secondary" data-action="free-mode">自由模式</button>
+            <button class="room-secondary" data-action="turn-mode">轮流模式</button>
+          </div>
+        </div>
         <div class="room-player-list" data-player-list></div>
         <div class="room-info-grid">
           <section class="room-panel">
@@ -102,9 +109,15 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     const cancelMatchButton = element.querySelector('[data-action="cancel-match"]') as HTMLButtonElement
     const readyButton = element.querySelector('[data-action="ready"]') as HTMLButtonElement
     const startButton = element.querySelector('[data-action="start"]') as HTMLButtonElement
+    const coopControls = element.querySelector('[data-coop-controls]') as HTMLElement
+    const freeModeButton = element.querySelector('[data-action="free-mode"]') as HTMLButtonElement
+    const turnModeButton = element.querySelector('[data-action="turn-mode"]') as HTMLButtonElement
     const currentPlayer = state.players.find((player) => player.id === state.currentPlayerId) ?? state.players[0]
+    const turnPlayer = state.players.find((player) => player.id === state.currentTurn)
     const isCoop = options.mode === 'coop'
     const canStartCoop = Boolean(isCoop && currentPlayer?.isHost && state.players.length >= 2 && !state.gameStarted)
+    const canChangeTurnMode = Boolean(isCoop && currentPlayer?.isHost)
+    const canSendCoopMove = !state.turnMode || !state.currentTurn || state.currentTurn === state.currentPlayerId
     roomCard.hidden = !state.roomId
     roomActions.hidden = Boolean(state.roomId)
     matchButton.hidden = isCoop || state.isMatching
@@ -114,6 +127,12 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
     startButton.hidden = !isCoop || !currentPlayer?.isHost
     startButton.disabled = !canStartCoop
     startButton.textContent = state.players.length < 2 ? '等待队友' : '开始协作'
+    coopControls.hidden = !isCoop || !state.roomId
+    freeModeButton.disabled = !canChangeTurnMode || !state.turnMode
+    turnModeButton.disabled = !canChangeTurnMode || state.turnMode
+    element.querySelector('[data-turn-status]')!.textContent = state.turnMode
+      ? `轮流模式：当前轮到 ${turnPlayer?.name ?? state.currentTurn ?? '未知玩家'}${canSendCoopMove ? '' : '，你暂不可操作'}`
+      : '自由模式：所有玩家都可以操作'
     element.querySelector('[data-room-code]')!.textContent = state.roomId ?? '------'
     const gameStateEl = element.querySelector('[data-game-state]')!
     if (state.gameResult) {
@@ -198,6 +217,12 @@ export function createRoomPage(options: RoomPageOptions): RoomPage {
   })
   element.querySelector('[data-action="start"]')?.addEventListener('click', () => {
     useRoomStore.startGame()
+  })
+  element.querySelector('[data-action="free-mode"]')?.addEventListener('click', () => {
+    useRoomStore.setTurnMode(false)
+  })
+  element.querySelector('[data-action="turn-mode"]')?.addEventListener('click', () => {
+    useRoomStore.setTurnMode(true)
   })
   element.querySelector('.room-chat-form')?.addEventListener('submit', (event) => {
     event.preventDefault()

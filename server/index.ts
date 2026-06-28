@@ -165,8 +165,12 @@ io.on('connection', (socket) => {
   socket.on('set-turn-mode', (enabled: boolean) => {
     const roomId = socket.data.roomId
     if (roomId) {
-      roomManager.setTurnMode(roomId, enabled)
-      io.to(roomId).emit('turn-mode-changed', enabled)
+      const result = roomManager.setTurnModeForPlayer(roomId, playerId, enabled)
+      if (!result.ok) {
+        socket.emit('turn-error', result.error || '无法切换轮流规则')
+        return
+      }
+      io.to(roomId).emit('turn-mode-changed', enabled, result.currentTurn ?? null)
     }
   })
 
@@ -185,7 +189,7 @@ io.on('connection', (socket) => {
       // Check turn mode
       const room = roomManager.getRoom(roomId)
       if (room?.turnMode && room.currentTurn !== playerId) {
-        socket.emit('turn-error', 'Not your turn')
+        socket.emit('turn-error', '轮流模式下还没轮到你')
         return
       }
       if (roomManager.validateMove(roomId, move)) {

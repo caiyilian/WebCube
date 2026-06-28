@@ -136,10 +136,18 @@ export class RoomManager {
     const room = this.rooms.get(roomId)
     if (!room) return false
     room.turnMode = enabled
-    if (enabled) {
-      room.currentTurn = room.players[0]?.id || null
-    }
+    room.currentTurn = enabled ? room.players[0]?.id || null : null
     return true
+  }
+
+  setTurnModeForPlayer(roomId: string, playerId: string, enabled: boolean): { ok: boolean; error?: string; currentTurn?: string | null } {
+    const room = this.rooms.get(roomId)
+    if (!room) return { ok: false, error: '房间不存在' }
+    if (room.mode !== 'coop') return { ok: false, error: '只有协作模式可以切换轮流规则' }
+    if (room.host !== playerId) return { ok: false, error: '只有房主可以切换轮流规则' }
+
+    this.setTurnMode(roomId, enabled)
+    return { ok: true, currentTurn: room.currentTurn ?? null }
   }
 
   nextTurn(roomId: string): boolean {

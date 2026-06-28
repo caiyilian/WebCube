@@ -24,6 +24,8 @@ const roomState: RoomState = {
   gameStarted: false,
   scramble: null,
   sharedCubeState: null,
+  turnMode: false,
+  currentTurn: null,
   opponentMoves: [],
   gameResult: null,
   isMatching: false,
@@ -162,6 +164,25 @@ describe('RoomPage', () => {
 
     expect(page.element.textContent).toContain('Bob（我）')
     expect(startButton.hidden).toBe(true)
+  })
+
+  it('shows coop turn mode controls and sends mode changes', () => {
+    vi.spyOn(useRoomStore, 'attachClient').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'connect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'disconnect').mockImplementation(() => undefined)
+    vi.spyOn(useRoomStore, 'loadLeaderboard').mockResolvedValue(undefined)
+    const teammate: Player = { ...player, id: 'p2', name: 'Bob', isHost: false }
+    vi.spyOn(useRoomStore, 'subscribe').mockImplementation((listener) => {
+      listener({ ...roomState, players: [player, teammate], turnMode: true, currentTurn: 'p2' })
+      return () => undefined
+    })
+    const setTurnMode = vi.spyOn(useRoomStore, 'setTurnMode').mockImplementation(() => undefined)
+
+    const page = createRoomPage({ mode: 'coop', cubeSize: 3, onBack: vi.fn() })
+    ;(page.element.querySelector('[data-action="free-mode"]') as HTMLButtonElement).click()
+
+    expect(page.element.textContent).toContain('轮流模式：当前轮到 Bob，你暂不可操作')
+    expect(setTurnMode).toHaveBeenCalledWith(false)
   })
 
   it('shows room errors', () => {

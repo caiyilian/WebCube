@@ -92,6 +92,9 @@ export interface ServerToClientEvents {
   'cube-update': (cubeState: CubeState) => void
   'player-ready': (playerId: string) => void
   'timer-sync': (serverTime: number) => void
+  'turn-mode-changed': (enabled: boolean, currentTurn: string | null) => void
+  'turn-changed': (playerId: string | null) => void
+  'turn-error': (error: string) => void
 
   // Matchmaking
   'match-found': (roomId: string) => void
@@ -126,6 +129,7 @@ export interface ClientToServerEvents {
   // Game events
   'move': (move: Move) => void
   'coop-move': (move: Move) => void
+  'set-turn-mode': (enabled: boolean) => void
   'request-hint': () => void
 
   // Matchmaking
