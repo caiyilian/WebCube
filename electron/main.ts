@@ -26,6 +26,9 @@ const isDev = DEV_SERVER_URL.length > 0
 /** Embedded server instance */
 const embeddedServer = createEmbeddedServer()
 
+/** Whether the app is in the process of quitting (exit confirmation guard) */
+let appIsQuitting = false
+
 // ── Persistent state helpers ──────────────────────────────────
 
 /** Path to per-user settings file (Phase 7.4) */
@@ -126,7 +129,7 @@ function createTray(): void {
     {
       label: '退出',
       click: () => {
-        app.isQuitting = true
+        appIsQuitting = true
         app.quit()
       },
     },
@@ -325,7 +328,7 @@ function createWindow(): BrowserWindow {
   // Save window state on resize/move (debounced via 'close' save)
   win.on('close', (event) => {
     // Exit confirmation (production only)
-    if (!isDev && !app.isQuitting) {
+    if (!isDev && !appIsQuitting) {
       event.preventDefault()
       const result = dialog.showMessageBoxSync(win, {
         type: 'question',
@@ -342,7 +345,7 @@ function createWindow(): BrowserWindow {
       } else if (result === 1) {
         // Quit
         saveWindowState(win)
-        app.isQuitting = true
+        appIsQuitting = true
         app.quit()
       }
       // result === 2: cancel, do nothing
@@ -418,10 +421,3 @@ app.on('before-quit', () => {
     tray = null
   }
 })
-
-// Declare isQuitting on app for the close handler
-declare module 'electron' {
-  interface App {
-    isQuitting?: boolean
-  }
-}
