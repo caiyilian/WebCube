@@ -11,3 +11,6 @@ declare module '@tarojs/components' {
   export const Canvas: any
   export const Picker: any
 }
+
+/** WeChat mini-program global API */
+declare const wx: any

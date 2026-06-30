@@ -9,7 +9,7 @@ export class MiniProgramSocket {
   private onMessageCallback: ((data: any) => void) | null = null
   private onCloseCallback: (() => void) | null = null
   private onErrorCallback: ((error: any) => void) | null = null
-  private isConnected: boolean = false
+  private _connected: boolean = false
   private reconnectAttempts: number = 0
   private maxReconnectAttempts: number = 5
   private reconnectDelay: number = 3000
@@ -41,7 +41,7 @@ export class MiniProgramSocket {
     })
 
     this.socket.onOpen(() => {
-      this.isConnected = true
+      this._connected = true
       this.reconnectAttempts = 0
       this.onOpenCallback?.()
     })
@@ -51,13 +51,13 @@ export class MiniProgramSocket {
     })
 
     this.socket.onClose(() => {
-      this.isConnected = false
+      this._connected = false
       this.onCloseCallback?.()
       this.tryReconnect()
     })
 
     this.socket.onError((err: any) => {
-      this.isConnected = false
+      this._connected = false
       this.onErrorCallback?.(err)
     })
   }
@@ -67,7 +67,7 @@ export class MiniProgramSocket {
       this.socket = new WebSocket(this.url)
 
       this.socket.onopen = () => {
-        this.isConnected = true
+        this._connected = true
         this.reconnectAttempts = 0
         this.onOpenCallback?.()
       }
@@ -77,13 +77,13 @@ export class MiniProgramSocket {
       }
 
       this.socket.onclose = () => {
-        this.isConnected = false
+        this._connected = false
         this.onCloseCallback?.()
         this.tryReconnect()
       }
 
       this.socket.onerror = (error: any) => {
-        this.isConnected = false
+        this._connected = false
         this.onErrorCallback?.(error)
       }
     } catch (err) {
@@ -109,7 +109,7 @@ export class MiniProgramSocket {
   send(data: any): void {
     const message = typeof data === 'string' ? data : JSON.stringify(data)
 
-    if (this.socket && this.isConnected) {
+    if (this.socket && this._connected) {
       if (typeof wx !== 'undefined' && this.socket.send) {
         this.socket.send({ data: message })
       } else if (this.socket.send) {
@@ -126,7 +126,7 @@ export class MiniProgramSocket {
         this.socket.close()
       }
     }
-    this.isConnected = false
+    this._connected = false
   }
 
   onOpen(callback: () => void): void {
@@ -146,6 +146,6 @@ export class MiniProgramSocket {
   }
 
   isConnected(): boolean {
-    return this.isConnected
+    return this._connected
   }
 }
