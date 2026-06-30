@@ -17,10 +17,16 @@ files:
 # ── Windows ───────────────────────────────────────────────────
 win:
   target:
+    - target: portable
+      arch:
+        - x64
     - target: nsis
       arch:
         - x64
-  icon: icons/icon.png
+  icon: icons/icon.ico
+
+portable:
+  artifactName: WebCube-${version}-portable.${ext}
 
 nsis:
   oneClick: false
@@ -32,7 +38,7 @@ nsis:
 # ── macOS ─────────────────────────────────────────────────────
 mac:
   target:
-    - target: dmg
+    - target: dir
       arch:
         - x64
         - arm64
@@ -40,17 +46,10 @@ mac:
   category: public.app-category.games
   hardenedRuntime: true
 
-dmg:
-  title: WebCube
-  icon: icons/icon.png
-
 # ── Linux ─────────────────────────────────────────────────────
 linux:
   target:
-    - target: AppImage
-      arch:
-        - x64
-    - target: deb
+    - target: dir
       arch:
         - x64
   icon: icons/icon.png
