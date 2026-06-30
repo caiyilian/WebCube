@@ -51,4 +51,11 @@ describe('GameScreen', () => {
     expect(text).toContain('×')
     expect(text).toContain('practice')
   })
+
+  it('shows 3D unavailable notice', () => {
+    const renderer = TestRenderer.create(<GameScreen />)
+    const text = JSON.stringify(renderer.toJSON())
+    expect(text).toContain('3D 渲染暂不可用')
+    expect(text).toContain('Web 版支持完整 3D 体验')
+  })
 })
