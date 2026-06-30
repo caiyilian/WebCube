@@ -61,6 +61,7 @@ export default function GameScreen() {
         <View style={styles.cubePlaceholder}>
           <Text style={styles.placeholderText}>3D Cube ({cubeSize}×{cubeSize}×{cubeSize})</Text>
           <Text style={styles.placeholderText}>Mode: {mode}</Text>
+          <Text style={styles.unavailableText}>3D 渲染暂不可用，Web 版支持完整 3D 体验</Text>
         </View>
       </View>
 
@@ -121,9 +122,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   placeholderText: {
-    color: '#666',
-    fontSize: 16,
-  },
+      color: '#666',
+      fontSize: 16,
+    },
+    unavailableText: {
+      color: '#ff6b6b',
+      fontSize: 13,
+      marginTop: 12,
+      textAlign: 'center',
+      paddingHorizontal: 20,
+    },
   controls: {
     padding: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
