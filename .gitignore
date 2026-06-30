@@ -41,3 +41,9 @@ coverage/
 # Tools
 .codegraph/
 .omo/
+
+# Electron build output
+dist-electron/
+
+# Playwright test results
+test-results/
