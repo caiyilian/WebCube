@@ -12,7 +12,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:client": "vitest run --dir src",
-    "test:server": "vitest run --dir server"
+    "test:server": "vitest run --dir server",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts"
   },
   "repository": {
     "type": "git",
@@ -41,6 +42,7 @@
     "three": "^0.185.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/three": "^0.185.0",
     "@vitest/coverage-v8": "^4.1.9",
     "jsdom": "^29.1.1",
