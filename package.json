@@ -13,7 +13,10 @@
     "test:coverage": "vitest run --coverage",
     "test:client": "vitest run --dir src",
     "test:server": "vitest run --dir server",
-    "test:e2e": "playwright test --config=e2e/playwright.config.ts"
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "electron:dev": "npm run build:electron && concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "electron:build": "npm run build && npm run build:electron && electron-builder"
   },
   "repository": {
     "type": "git",
@@ -45,11 +48,15 @@
     "@playwright/test": "^1.61.1",
     "@types/three": "^0.185.0",
     "@vitest/coverage-v8": "^4.1.9",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.5.1",
     "jsdom": "^29.1.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vite": "^8.1.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "wait-on": "^9.0.10"
   },
-  "main": "index.js"
+  "main": "dist-electron/main.js"
 }
