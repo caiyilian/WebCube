@@ -438,6 +438,33 @@ html {
   color: #888;
 }
 
+/* Settings separator & desktop section */
+.settings-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 16px 0;
+}
+
+.settings-subtitle {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.settings-item input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.settings-item input[type="text"]::placeholder {
+  color: #666;
+}
+
 /* Room Page */
 .room-page {
   min-height: 100%;
