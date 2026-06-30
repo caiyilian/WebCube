@@ -1,0 +1,58 @@
+# Electron Builder configuration — Phase 7.3
+# https://www.electron.build/configuration
+
+appId: com.webcube.app
+productName: WebCube
+copyright: Copyright © 2026 WebCube
+
+directories:
+  output: release
+  buildResources: icons
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+
+# ── Windows ───────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: icons/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: icons/icon.png
+  uninstallerIcon: icons/icon.png
+  license: LICENSE
+
+# ── macOS ─────────────────────────────────────────────────────
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: icons/icon.png
+  category: public.app-category.games
+  hardenedRuntime: true
+
+dmg:
+  title: WebCube
+  icon: icons/icon.png
+
+# ── Linux ─────────────────────────────────────────────────────
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  icon: icons/icon.png
+  category: Game
+  maintainer: webcube@example.com
