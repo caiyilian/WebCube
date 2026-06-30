@@ -15,8 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install
       - run: npm run build
       - run: npm run test:run
       - run: npm run test:coverage
@@ -32,9 +31,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: rn/package-lock.json
-      - run: npm ci --ignore-scripts
+      - run: npm install --ignore-scripts
       - run: npm test
 
   taro:
@@ -48,7 +45,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: taro/package-lock.json
-      - run: npm ci 2>&1 || echo "taro install may fail, check manually"
+      - run: npm install 2>&1 || echo "taro install may fail, check manually"
       - run: npm run build:h5 2>&1 || echo "taro build may fail, check manually"
