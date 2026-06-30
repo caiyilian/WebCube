@@ -1,6 +1,6 @@
 # WebCube
 
-> WebCube - 网页版魔方游戏，支持多人联机、协作解魔方、AI 智能提示
+> WebCube - 网页版魔方游戏，支持多人联机、协作解魔方、AI 智能提示、桌面端应用
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/language-TypeScript-3178c6.svg)
@@ -28,10 +28,16 @@
 - **级别可选** - Level 1/2/3 不同提示详细度
 - **防作弊** - 仅练习模式可用，多人模式禁用
 
+### 桌面端
+- **跨平台应用** - Windows / macOS / Linux 原生桌面应用
+- **内嵌服务器** - 单进程运行，无需额外搭建 Node 环境
+- **系统托盘** - 最小化到托盘，后台运行
+- **全局快捷键** - Ctrl+Shift+W 切换窗口，Ctrl+Shift+R 强制刷新
+- **原生菜单** - 编辑/视图/窗口/帮助菜单
+
 ### 部署方式
 - **局域网模式** - 零部署，自己的电脑就是服务器
 - **内网穿透** - ngrok / frp / cloudflared 支持
-- **公网部署** - Vercel + Railway 一键部署
 
 ## 技术栈
 
@@ -45,6 +51,7 @@
 | 后端 | Node.js + Express |
 | 求解器 | cubejs Worker (Kociemba) |
 | 测试 | Vitest + Jest |
+| 桌面端 | Electron + electron-builder |
 
 ## 快速开始
 
@@ -72,6 +79,12 @@ npm run server
 # 访问
 # http://localhost:5173 (前端)
 # http://localhost:3000 (后端)
+
+# 启动 Electron 桌面端 (开发模式，自动启动前后端)
+npm run electron:dev
+
+# 打包桌面安装程序
+npm run electron:build
 ```
 
 ### 局域网部署
@@ -155,6 +168,7 @@ WebCube/
 │   └── types.ts             # 前后端共享类型
 ├── rn/                      # React Native 子项目
 ├── taro/                    # Taro 小程序子项目
+├── electron/                # Electron 桌面端（主进程、预加载、内嵌服务器）
 └── workers/                 # Web Worker（求解器）
 ```
 
@@ -194,8 +208,11 @@ WebCube/
 | | 音效系统 | ✅ 完成 |
 | **跨平台** | Taro H5/小程序构建 | ✅ 完成 |
 | | React Native 基础版本 | ✅ 完成 |
-| **质量** | 测试框架（139+ 用例） | ✅ 完成 |
-| | CI（GitHub Actions） | ✅ 完成 |
+| **桌面端** | Electron 主进程 + IPC 桥 | ✅ 完成 |
+| | 跨平台打包（Windows/macOS/Linux） | ✅ 完成 |
+| | 内嵌服务器模式 | ✅ 完成 |
+| | 系统托盘 + 全局快捷键 | ✅ 完成 |
+| **质量** | 测试框架（150+ 用例） | ✅ 完成 |
 
 ## 贡献指南
 
@@ -214,4 +231,5 @@ WebCube/
 - [Three.js](https://threejs.org/) - 3D 渲染引擎
 - [cubejs](https://github.com/ldez/cubejs) - Kociemba 求解器
 - [cubing.js](https://github.com/cubing/cubing.js) - 专业魔方库
+- [Electron](https://www.electronjs.org/) - 桌面应用框架
 - 所有开源魔方社区的贡献者
