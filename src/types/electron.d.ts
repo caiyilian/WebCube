@@ -22,6 +22,12 @@ export interface ElectronAPI {
   /** Get current OS theme (light/dark) */
   getTheme: () => Promise<'light' | 'dark'>
 
+  /** Desktop settings (Phase 7.4) */
+  getDesktopSettings: () => Promise<DesktopSettings>
+  setDesktopSettings: (settings: Partial<DesktopSettings>) => Promise<DesktopSettings>
+  /** Get the active server URL (embedded or external) */
+  getServerUrl: () => Promise<string>
+
   /** Subscribe to OS theme changes; returns unsubscribe function */
   onThemeChanged: (callback: (theme: 'light' | 'dark') => void) => () => void
 
@@ -29,7 +35,15 @@ export interface ElectronAPI {
   getPathForFile: (file: File) => string
 }
 
-// Electron dialog types that the renderer can use
+// ── Desktop settings ──────────────────────────────────────────
+
+export interface DesktopSettings {
+  backendMode: 'embedded' | 'external'
+  externalServerUrl: string
+}
+
+// ── Electron dialog types ─────────────────────────────────────
+
 interface OpenDialogOptions {
   title?: string
   defaultPath?: string

@@ -1,5 +1,6 @@
 import { soundManager } from '../game/SoundManager'
 import { themeManager, themes, type ThemeName } from '../game/ThemeManager'
+import type { DesktopSettings } from '../types/electron'
 
 export interface SettingsData {
   animationSpeed: number
@@ -7,6 +8,11 @@ export interface SettingsData {
   theme: ThemeName
   soundEnabled: boolean
   volume: number
+}
+
+const defaultDesktopSettings: DesktopSettings = {
+  backendMode: 'embedded',
+  externalServerUrl: '',
 }
 
 export class Settings {
@@ -20,6 +26,10 @@ export class Settings {
     soundEnabled: soundManager.isEnabled(),
     volume: soundManager.getVolume(),
   }
+  /** Whether running inside Electron (desktop app) */
+  private isDesktop = false
+  private desktopSettings: DesktopSettings = { ...defaultDesktopSettings }
+  private desktopSettingsEl: HTMLElement | null = null
 
   constructor() {
     this.element = document.createElement('div')
@@ -58,10 +68,27 @@ export class Settings {
           <input type="range" class="settings-volume" min="0" max="1" value="${this.settings.volume}" step="0.05">
           <span class="settings-volume-value">${Math.round(this.settings.volume * 100)}%</span>
         </div>
+        <!-- Desktop settings (Electron only) — hidden by default -->
+        <div class="settings-desktop-section" hidden>
+          <div class="settings-separator"></div>
+          <div class="settings-title settings-subtitle">桌面设置</div>
+          <div class="settings-item">
+            <label>后端模式</label>
+            <select class="settings-backend-mode">
+              <option value="embedded">内嵌服务器</option>
+              <option value="external">外部服务器</option>
+            </select>
+          </div>
+          <div class="settings-item settings-external-url" hidden>
+            <label>服务器地址</label>
+            <input type="text" class="settings-external-url-input" placeholder="http://localhost:3000">
+          </div>
+        </div>
       </div>
     `
 
     this.panel = this.element.querySelector('.settings-panel')!
+    this.desktopSettingsEl = this.element.querySelector('.settings-desktop-section') as HTMLElement
 
     // Toggle button
     this.element.querySelector('.settings-toggle')!.addEventListener('click', () => {
@@ -103,6 +130,57 @@ export class Settings {
       volumeValue.textContent = `${Math.round(this.settings.volume * 100)}%`
       soundManager.setVolume(this.settings.volume)
     })
+
+    // ── Desktop settings (Phase 7.4) ───────────────────────────
+    this.isDesktop = typeof window !== 'undefined' && Boolean(window.electronAPI)
+
+    if (this.isDesktop) {
+      void this.initDesktopSettings()
+    }
+  }
+
+  private async initDesktopSettings(): Promise<void> {
+    if (!this.desktopSettingsEl || !window.electronAPI) return
+
+    // Show the desktop section
+    this.desktopSettingsEl.hidden = false
+
+    // Load saved settings from main process
+    try {
+      this.desktopSettings = await window.electronAPI.getDesktopSettings()
+    } catch {
+      this.desktopSettings = { ...defaultDesktopSettings }
+    }
+
+    const modeSelect = this.desktopSettingsEl.querySelector('.settings-backend-mode') as HTMLSelectElement
+    const externalUrlRow = this.desktopSettingsEl.querySelector('.settings-external-url') as HTMLElement
+    const externalUrlInput = this.desktopSettingsEl.querySelector('.settings-external-url-input') as HTMLInputElement
+
+    // Set current values
+    modeSelect.value = this.desktopSettings.backendMode
+    externalUrlInput.value = this.desktopSettings.externalServerUrl
+    externalUrlRow.hidden = this.desktopSettings.backendMode !== 'external'
+
+    modeSelect.addEventListener('change', () => {
+      const newMode = modeSelect.value as 'embedded' | 'external'
+      this.desktopSettings.backendMode = newMode
+      externalUrlRow.hidden = newMode !== 'external'
+      void this.saveDesktopSettings()
+    })
+
+    externalUrlInput.addEventListener('change', () => {
+      this.desktopSettings.externalServerUrl = externalUrlInput.value
+      void this.saveDesktopSettings()
+    })
+  }
+
+  private async saveDesktopSettings(): Promise<void> {
+    if (!window.electronAPI) return
+    try {
+      this.desktopSettings = await window.electronAPI.setDesktopSettings(this.desktopSettings)
+    } catch {
+      // ignore save failures
+    }
   }
 
   public toggle(): void {

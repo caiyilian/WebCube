@@ -72,9 +72,20 @@ export class RoomClient {
     return () => this.listeners.delete(listener)
   }
 
-  connect(): void {
+  async connect(): Promise<void> {
     if (this.socket?.connected || this.status === 'connecting') return
-    this.socket = this.socketFactory(this.url, { autoConnect: false, reconnection: true })
+
+    // In Electron, resolve the server URL from the main process
+    let url = this.url
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      try {
+        url = await window.electronAPI.getServerUrl()
+      } catch {
+        // fallback to the default URL
+      }
+    }
+
+    this.socket = this.socketFactory(url, { autoConnect: false, reconnection: true })
     this.setStatus('connecting', null)
 
     this.socket.on('connect', () => this.setStatus('connected', null))

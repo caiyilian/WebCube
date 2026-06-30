@@ -1,5 +1,5 @@
 /**
- * Electron preload script — Phase 7.2
+ * Electron preload script — Phase 7.2 / 7.4
  *
  * Exposes a secure IPC bridge via contextBridge.
  * Renderer accesses it through `window.electronAPI`.
@@ -19,6 +19,11 @@ export interface ElectronAPI {
   showSaveDialog: (options?: Electron.SaveDialogOptions) => Promise<Electron.SaveDialogReturnValue>
   getTheme: () => Promise<'light' | 'dark'>
 
+  // ── Desktop settings (Phase 7.4) ─────────────────────────
+  getDesktopSettings: () => Promise<{ backendMode: 'embedded' | 'external'; externalServerUrl: string }>
+  setDesktopSettings: (settings: { backendMode?: 'embedded' | 'external'; externalServerUrl?: string }) => Promise<{ backendMode: 'embedded' | 'external'; externalServerUrl: string }>
+  getServerUrl: () => Promise<string>
+
   // ── IPC event listeners (main → renderer) ─────────────────
   onThemeChanged: (callback: (theme: 'light' | 'dark') => void) => () => void
 
@@ -37,6 +42,11 @@ const api: ElectronAPI = {
   showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
   showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
   getTheme: () => ipcRenderer.invoke('get-theme'),
+
+  // Desktop settings (Phase 7.4)
+  getDesktopSettings: () => ipcRenderer.invoke('get-desktop-settings'),
+  setDesktopSettings: (settings) => ipcRenderer.invoke('set-desktop-settings', settings),
+  getServerUrl: () => ipcRenderer.invoke('get-server-url'),
 
   // IPC event listeners
   onThemeChanged: (callback) => {
