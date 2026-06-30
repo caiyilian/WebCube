@@ -45,7 +45,6 @@
 | 后端 | Node.js + Express |
 | 求解器 | cubejs Worker (Kociemba) |
 | 测试 | Vitest + Jest |
-| CI | GitHub Actions |
 
 ## 快速开始
 
