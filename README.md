@@ -131,6 +131,102 @@ npx cloudflared tunnel --url http://localhost:5173
 - **延迟高**: 确保设备在同一局域网，或使用有线连接
 - **画面卡顿**: 降低浏览器画质设置
 
+## Electron 桌面端
+
+WebCube 支持打包为 Windows / macOS / Linux 原生桌面应用，无需额外搭建 Node 环境。
+
+### 前提条件
+
+```bash
+npm install
+```
+
+### 开发模式启动
+
+Electron 开发模式会自动启动 Vite 前端 + 内嵌后端服务器（端口 3001），单窗口运行：
+
+```bash
+npm run electron:dev
+```
+
+### 构建安装包
+
+```bash
+# 构建生产版本（Vite + Electron）
+npm run electron:build
+```
+
+构建产物在 `release/` 目录：
+
+| 平台 | 产物 | 说明 |
+|------|------|------|
+| Windows | `release/WebCube-{version}-portable.exe` | 便携版，双击即用，无需安装 |
+| Windows | `release/win-unpacked/WebCube.exe` | 解压版，直接运行 |
+| macOS | `release/mac/WebCube.app` | 需在 macOS 上构建 |
+| Linux | `release/linux-unpacked/webcube` | 需在 Linux 上构建 |
+
+> **注意**：Windows NSIS 安装包和 macOS DMG 镜像需要外网下载打包工具，如果网络受限，推荐使用便携版（portable）。
+
+### 设置说明
+
+- **后端模式**：在设置面板（⚙️）的「桌面设置」中可选择「内嵌服务器」或「外部服务器」
+- **内嵌模式**：启动时自动启动后端，无需手动执行 `npm run server`
+- **外部模式**：可连接已有局域网/公网后端服务器
+- **快捷键**：`Ctrl+Shift+W` 切换窗口显示/隐藏，`Ctrl+Shift+R` 强制刷新
+- **托盘**：关闭窗口默认最小化到系统托盘，右键托盘图标可退出
+
+## Taro 小程序
+
+WebCube 使用 Taro 框架支持微信小程序和 H5 多端构建。
+
+### 子项目结构
+
+```
+taro/
+├── src/
+│   ├── pages/
+│   │   ├── index/          # 首页（阶数选择、模式选择）
+│   │   └── game/           # 游戏页（WebGL 渲染 + 计时器）
+│   ├── utils/
+│   │   ├── MiniProgramSocket.ts   # 小程序 WebSocket 封装
+│   │   ├── MiniProgramRenderer.ts # 小程序 3D 渲染封装
+│   │   └── PerformanceOptimizer.ts# 小程序性能优化
+│   └── app.config.ts       # 小程序全局配置
+```
+
+### 构建 H5 版本
+
+```bash
+cd taro
+npm install
+npm run build:h5
+# 产物在 taro/dist/，可直接部署到任何 Web 服务器
+```
+
+### 构建微信小程序版本
+
+```bash
+cd taro
+npm install
+npm run build:weapp
+# 产物在 taro/dist/（app.js, app.json, app.wxss, pages/ 等）
+```
+
+### 在微信开发者工具中运行
+
+1. 安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
+2. 打开微信开发者工具 → 选择「导入项目」
+3. 项目目录选择 `taro/dist/`
+4. 填入你的 AppID（或使用测试号）
+5. 点击「导入」即可预览
+
+### 注意事项
+
+- 小程序 WebGL 渲染使用 `MiniProgramRenderer.ts` 进行占位适配
+- 小程序 WebSocket 使用 `MiniProgramSocket.ts` 自动适配 `wx.connectSocket`
+- 如果使用测试号，部分功能（如云函数）可能受限
+- H5 版本功能完整，推荐优先使用 H5 预览
+
 ## 运行测试
 
 ```bash
