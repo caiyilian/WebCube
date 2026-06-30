@@ -11,8 +11,6 @@
   "dependencies": {
     "react": "18.2.0",
     "react-native": "0.74.0",
-    "react-native-gl": "^1.0.0",
-    "react-native-webgl": "^1.0.0",
     "@react-navigation/native": "^6.0.0",
     "@react-navigation/native-stack": "^6.0.0",
     "react-native-screens": "^3.0.0",
@@ -20,13 +18,14 @@
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
-    "@types/react-native": "^0.74.0",
     "typescript": "^5.0.0",
     "jest": "^29.0.0",
     "@babel/core": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "@babel/runtime": "^7.0.0",
     "babel-jest": "^29.0.0",
-    "metro-react-native-babel-preset": "^0.74.0"
+    "metro-react-native-babel-preset": "^0.74.0",
+    "react-test-renderer": "18.2.0",
+    "@types/react-test-renderer": "^18.0.0"
   }
 }
