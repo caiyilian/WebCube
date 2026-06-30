@@ -40,10 +40,12 @@
 | 构建 | Vite |
 | 语言 | TypeScript |
 | 3D 渲染 | Three.js |
-| 状态管理 | Zustand |
+| 状态管理 | 原生 Store 类 |
 | 网络 | Socket.IO + WebRTC (P2P) |
 | 后端 | Node.js + Express |
-| 求解器 | cubejs (Kociemba) |
+| 求解器 | cubejs Worker (Kociemba) |
+| 测试 | Vitest + Jest |
+| CI | GitHub Actions |
 
 ## 快速开始
 
@@ -117,40 +119,44 @@ npx cloudflared tunnel --url http://localhost:5173
 - **延迟高**: 确保设备在同一局域网，或使用有线连接
 - **画面卡顿**: 降低浏览器画质设置
 
+## 运行测试
+
+```bash
+# 运行所有测试
+npm run test:run
+
+# 运行测试并生成覆盖率报告
+npm run test:coverage
+
+# 仅运行前端测试
+npm run test:client
+
+# 仅运行服务端测试
+npm run test:server
+
+# React Native 子项目测试
+cd rn && npm test
+```
+
 ## 项目结构
 
 ```
 WebCube/
 ├── src/
-│   ├── components/          # UI 组件
-│   │   ├── Canvas.tsx       # Three.js 画布
-│   │   ├── HUD.tsx          # 计时器、操作计数
-│   │   ├── Lobby.tsx    # 大厅/房间列表
-│   │   ├── HintPanel.tsx    # 提示面板
-│   │   └── RoomChat.tsx     # 房间聊天
-│   ├── game/
-│   │   ├── CubeState.ts     # 魔方逻辑状态
-│   │   ├── CubeRenderer.ts  # Three.js 渲染
-│   │   ├── Interaction.ts   # 鼠标/键盘交互
-│   │   ├── Solver.ts        # 求解器封装
-│   │   ├── Scramble.ts      # 打乱生成
-│   │   └── HintEngine.ts    # 提示引擎
-│   ├── net/
-│   │   ├── RoomClient.ts    # Socket.IO 房间管理
-│   │   ├── P2PManager.ts    # WebRTC P2P 连接
-│   │   └── Sync.ts          # 状态同步逻辑
-│   ├── stores/              # Zustand 状态管理
-│   ├── pages/
-│   │   ├── index.tsx        # 首页/单机
-│   │   ├── battle/[id].tsx  # 对战房间
-│   │   ├── coop/[id].tsx    # 协作房间
-│   │   └── learn.tsx        # 教学模式
-│   └── styles/
+│   ├── components/          # UI 组件（HUD、Canvas、HomePage 等）
+│   ├── game/                # 游戏逻辑（CubeRenderer、Interaction 等）
+│   ├── net/                 # 网络层（RoomClient 等）
+│   ├── stores/              # 状态管理（useGameStore、useRoomStore）
+│   └── __tests__/           # 前端测试
 ├── server/
 │   ├── index.ts             # Express + Socket.IO
-│   └── rooms/               # 房间管理
-└── shared/
-    └── types.ts             # 共享类型定义
+│   ├── rooms/               # 房间/匹配/锦标赛管理
+│   └── __tests__/           # 服务端测试
+├── shared/
+│   └── types.ts             # 前后端共享类型
+├── rn/                      # React Native 子项目
+├── taro/                    # Taro 小程序子项目
+└── workers/                 # Web Worker（求解器）
 ```
 
 ## 游戏模式
@@ -161,14 +167,36 @@ WebCube/
 | **1v1 对战** | 实时竞速，谁先还原谁获胜 | 2 人 |
 | **协作模式** | 共同解一个魔方 | 2-4 人 |
 
-## 路线图
+## 功能完成度
 
-- [x] 项目初始化与方案文档
-- [x] **Phase 1：单机核心** (16 个子阶段)
-- [x] **Phase 2：多人联机基础** (14 个子阶段)
-- [ ] **Phase 3：协作模式** (7 个子阶段)
-- [ ] **Phase 4：扩展功能** (9 个子阶段)
-- [ ] **Phase 5：跨平台迁移** (8 个子阶段)
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| **单机核心** | 3D 魔方渲染、交互、打乱、重置 | ✅ 完成 |
+| | 自动求解（Kociemba Worker） | ✅ 完成 |
+| | 计时器、操作计数、Undo/Redo | ✅ 完成 |
+| | 提示系统（Level 1/2/3） | ✅ 完成 |
+| | 移动端触摸适配 | ✅ 完成 |
+| **多人联机** | Express + Socket.IO 服务端 | ✅ 完成 |
+| | 房间创建/加入/离开/观战 | ✅ 完成 |
+| | 1v1 实时对战 | ✅ 完成 |
+| | 匹配系统（随机匹配） | ✅ 完成 |
+| | 排行榜（ELO）+ 个人统计 | ✅ 完成 |
+| | 房间聊天 | ✅ 完成 |
+| **协作模式** | 协作房间（2-4 人） | ✅ 完成 |
+| | 共享魔方状态同步 | ✅ 完成 |
+| | 轮流/自由模式 | ✅ 完成 |
+| | 团队计时 + 操作统计 | ✅ 完成 |
+| **扩展功能** | 2×2 / 3×3 / 4×4 魔方 | ✅ 完成 |
+| | CFOP 训练模式 | ✅ 完成 |
+| | 回放系统 | ✅ 完成 |
+| | AI 对手（easy/medium/hard） | ✅ 完成 |
+| | 锦标赛模式 | ✅ 完成 |
+| | 自定义主题（classic/neon/soft） | ✅ 完成 |
+| | 音效系统 | ✅ 完成 |
+| **跨平台** | Taro H5/小程序构建 | ✅ 完成 |
+| | React Native 基础版本 | ✅ 完成 |
+| **质量** | 测试框架（139+ 用例） | ✅ 完成 |
+| | CI（GitHub Actions） | ✅ 完成 |
 
 ## 贡献指南
 
