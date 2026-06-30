@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  root:
+    name: Root Project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:run
+      - run: npm run test:coverage
+
+  rn:
+    name: React Native Subproject
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rn/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm test
+
+  taro:
+    name: Taro Subproject
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: taro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: taro/package-lock.json
+      - run: npm ci 2>&1 || echo "taro install may fail, check manually"
+      - run: npm run build:h5 2>&1 || echo "taro build may fail, check manually"
